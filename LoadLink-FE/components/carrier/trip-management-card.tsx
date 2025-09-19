@@ -5,16 +5,17 @@ import { Badge } from "@/components/ui/badge"
 import type { Trip } from "@/lib/data"
 import { vehicles, bookings } from "@/lib/data"
 import { MapPin, Calendar, Weight, DollarSign, Package } from "lucide-react"
+import { TripOut } from "@/services/trips"
 
 interface TripManagementCardProps {
-  trip: Trip
+  trip: TripOut
   onViewBookings?: (tripId: string) => void
   onEdit?: (tripId: string) => void
   onCancel?: (tripId: string) => void
 }
 
 export function TripManagementCard({ trip, onViewBookings, onEdit, onCancel }: TripManagementCardProps) {
-  const vehicle = vehicles.find((v) => v.id === trip.vehicleId)
+  const vehicle = vehicles.find((v) => v.id === trip.vehicle_id)
   const tripBookings = bookings.filter((b) => b.tripId === trip.id)
   const pendingBookings = tripBookings.filter((b) => b.status === "pending")
 
@@ -58,18 +59,18 @@ export function TripManagementCard({ trip, onViewBookings, onEdit, onCancel }: T
         <div className="grid grid-cols-2 gap-4 text-sm">
           <div className="flex items-center space-x-2">
             <Calendar className="h-4 w-4 text-muted-foreground" />
-            <span>{new Date(trip.departureDate).toLocaleDateString()}</span>
+            <span>{new Date(trip.departure_date).toLocaleDateString()}</span>
           </div>
           <div className="flex items-center space-x-2">
             <Weight className="h-4 w-4 text-muted-foreground" />
-            <span>{trip.availableCapacity.toLocaleString()} kg available</span>
+            <span>{trip.available_capacity.toLocaleString()} kg available</span>
           </div>
         </div>
 
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <DollarSign className="h-4 w-4 text-muted-foreground" />
-            <span className="font-semibold">${trip.pricePerKg}/kg</span>
+            <span className="font-semibold">${trip.price_per_kg}/kg</span>
           </div>
           {vehicle && <span className="text-sm text-muted-foreground capitalize">{vehicle.type}</span>}
         </div>

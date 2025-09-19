@@ -1,5 +1,5 @@
 "use client"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 import { TripManagementCard } from "@/components/carrier/trip-management-card"
@@ -8,12 +8,32 @@ import { trips, dataActions } from "@/lib/data"
 import { Plus } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { getMyTripsApi, TripOut } from "@/services/trips"
 
 export default function CarrierTripsPage() {
   const { user } = useAuth()
   const router = useRouter()
+   const [trips, setTrips] = useState<TripOut[]>([]);
+   const [loading, setLoading] = useState(true);
+
+   // fetch trips from backend
+   useEffect(() => {
+     const fetchTrips = async () => {
+       try {
+         setLoading(true);
+         const data = await getMyTripsApi();
+         setTrips(data);
+       } catch (err) {
+         console.error("Failed to fetch trips:", err);
+       } finally {
+         setLoading(false);
+       }
+     };
+     if (user) fetchTrips();
+   }, [user]);
   const [refreshTrigger, setRefreshTrigger] = useState(0)
-  const userTrips = trips.filter((t) => t.carrierId === user?.id)
+
+  const userTrips = trips.filter((t) => t.carrier_id === user?.id)
 
   const activeTrips = userTrips.filter((t) => t.status === "active")
   const pastTrips = userTrips.filter((t) => t.status === "completed")
@@ -24,6 +44,7 @@ export default function CarrierTripsPage() {
   }
 
   const handleEditTrip = (tripId: string) => {
+    console.log("hereeee")
     router.push(`/carrier/edit-trip/${tripId}`)
   }
 

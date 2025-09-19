@@ -26,15 +26,15 @@ export interface Vehicle {
 
 export interface Trip {
   id: string
-  carrierId: string
-  vehicleId: string
+  carrier_id: string
+  vehicle_id: string
   origin: string
   destination: string
-  departureDate: string
-  arrivalDate: string
-  pricePerKg: number
-  availableCapacity: number
-  totalCapacity: number
+  departure_date: string
+  arrival_date: string
+  price_per_kg: number
+  available_capacity: number
+  total_capacity: number
   status: "active" | "completed" | "cancelled"
   description?: string
 }
@@ -158,43 +158,43 @@ export const vehicles: Vehicle[] = [
 export const trips: Trip[] = [
   {
     id: "1",
-    carrierId: "2",
-    vehicleId: "1",
+    carrier_id: "2",
+    vehicle_id: "1",
     origin: "Los Angeles, CA",
     destination: "Phoenix, AZ",
-    departureDate: "2024-01-20",
-    arrivalDate: "2024-01-21",
-    pricePerKg: 2.5,
-    availableCapacity: 3000,
-    totalCapacity: 5000,
+    departure_date: "2024-01-20",
+    arrival_date: "2024-01-21",
+    price_per_kg: 2.5,
+    available_capacity: 3000,
+    total_capacity: 5000,
     status: "active",
     description: "Direct route, experienced driver",
   },
   {
     id: "2",
-    carrierId: "2",
-    vehicleId: "2",
+    carrier_id: "2",
+    vehicle_id: "2",
     origin: "Houston, TX",
     destination: "Dallas, TX",
-    departureDate: "2024-01-22",
-    arrivalDate: "2024-01-22",
-    pricePerKg: 1.8,
-    availableCapacity: 12000,
-    totalCapacity: 15000,
+    departure_date: "2024-01-22",
+    arrival_date: "2024-01-22",
+    price_per_kg: 1.8,
+    available_capacity: 12000,
+    total_capacity: 15000,
     status: "active",
     description: "Same day delivery available",
   },
   {
     id: "3",
-    carrierId: "4",
-    vehicleId: "3",
+    carrier_id: "4",
+    vehicle_id: "3",
     origin: "San Francisco, CA",
     destination: "Sacramento, CA",
-    departureDate: "2024-01-25",
-    arrivalDate: "2024-01-25",
-    pricePerKg: 3.2,
-    availableCapacity: 1500,
-    totalCapacity: 2000,
+    departure_date: "2024-01-25",
+    arrival_date: "2024-01-25",
+    price_per_kg: 3.2,
+    available_capacity: 1500,
+    total_capacity: 2000,
     status: "active",
     description: "Small loads welcome",
   },
@@ -352,7 +352,7 @@ export const dataActions = {
         id: `payment-${Date.now()}`,
         bookingId,
         fromUserId: booking.shipperId,
-        toUserId: trips.find((t) => t.id === booking.tripId)?.carrierId || "",
+        toUserId: trips.find((t) => t.id === booking.tripId)?.carrier_id || "",
         amount: booking.totalPrice,
         status: "completed",
         createdDate: new Date().toISOString().split("T")[0],

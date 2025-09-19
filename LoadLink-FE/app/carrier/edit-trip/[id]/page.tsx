@@ -8,58 +8,109 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { useAuth } from "@/contexts/auth-context"
-import { vehicles, trips, dataActions } from "@/lib/data"
+import {  dataActions } from "@/lib/data"
 import { ArrowRight, MapPin, Calendar, DollarSign, ArrowLeft } from "lucide-react"
 import Link from "next/link"
+import { de } from "date-fns/locale"
+import { getTripByIdApi, TripOut } from "@/services/trips"
+import { getMyVehiclesApi, VehicleOut } from "@/services/vehicles"
+import { get } from "http"
+import { updateTripApi } from "../../../../services/trips"
 
 export default function EditTripPage() {
   const { user } = useAuth()
+ 
+  if (!user) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-muted-foreground mb-4">You must be logged in to edit a trip.</p>
+        <Button asChild>
+          <Link href="/login">Go to Login</Link>
+        </Button>
+      </div>
+    )
+  }
+  console.log("kay roa")
+  
   const router = useRouter()
   const params = useParams()
   const tripId = params.id as string
 
+  const [currentTrip, setCurrentTrip] = useState<TripOut | null>(null);
+  const [vehicles, setVehicles] = useState<VehicleOut[]>([]);
+  const [loading, setLoading] = useState(true)  
+  useEffect(() => {
+    const fetchTrip = async () => {
+      try {
+        const trip = await getTripByIdApi(tripId);
+        const vehicleResponse = await getMyVehiclesApi();
+        setVehicles(vehicleResponse);
+        if (trip.carrier_id !== user?.id) {
+          router.push("/carrier/trips"); // not authorized
+        } else {
+          setCurrentTrip(trip);
+          setFormData({
+            vehicle_id: trip.vehicle_id,
+            origin: trip.origin,
+            destination: trip.destination,
+            departure_date: trip.departure_date.split("T")[0], // format for <input type="date">
+            arrival_date: trip.arrival_date.split("T")[0],
+            price_per_kg: trip.price_per_kg.toString(),
+            description: trip.description || "",
+          });
+          setLoading(false);
+        }
+      } catch (err) {
+        console.error("Failed to fetch trip", err);
+        router.push("/carrier/trips");
+      }
+    };
+
+    fetchTrip();
+  }, [tripId, user?.id, router]);
+
   const [currentStep, setCurrentStep] = useState(1)
   const [formData, setFormData] = useState({
-    vehicleId: "",
+    vehicle_id: "",
     origin: "",
     destination: "",
-    departureDate: "",
-    arrivalDate: "",
-    pricePerKg: "",
+    departure_date: "",
+    arrival_date: "",
+    price_per_kg: "",
     description: "",
-  })
-  const [loading, setLoading] = useState(true)
+  });
+  
 
-  const userVehicles = vehicles.filter((v) => v.carrierId === user?.id && v.isActive)
-  const selectedVehicle = vehicles.find((v) => v.id === formData.vehicleId)
-  const currentTrip = trips.find((t) => t.id === tripId)
+  const userVehicles = vehicles.filter((v) => v.carrier_id === user?.id && v.is_active)
+  const selectedVehicle = vehicles.find((v) => v.id === formData.vehicle_id)
+  // const currentTrip = trips.find((t) => t.id === tripId)
 
-  useEffect(() => {
-    if (currentTrip && currentTrip.carrierId === user?.id) {
-      setFormData({
-        vehicleId: currentTrip.vehicleId,
-        origin: currentTrip.origin,
-        destination: currentTrip.destination,
-        departureDate: currentTrip.departureDate,
-        arrivalDate: currentTrip.arrivalDate,
-        pricePerKg: currentTrip.pricePerKg.toString(),
-        description: currentTrip.description || "",
-      })
-      setLoading(false)
-    } else if (!currentTrip) {
-      // Trip not found, redirect back
-      router.push("/carrier/trips")
-    } else if (currentTrip.carrierId !== user?.id) {
-      // Not authorized to edit this trip
-      router.push("/carrier/trips")
-    }
-  }, [currentTrip, user?.id, router])
+  // useEffect(() => {
+  //   if (currentTrip && currentTrip.carrier_id === user?.id) {
+  //     setFormData({
+  //       vehicle_id: currentTrip.vehicle_id,
+  //       origin: currentTrip.origin,
+  //       destination: currentTrip.destination,
+  //       departure_date: currentTrip.departure_date,
+  //       arrival_date: currentTrip.arrival_date,
+  //       price_per_kg: currentTrip.price_per_kg.toString(),
+  //       description: currentTrip.description || "",
+  //     })
+  //     setLoading(false)
+  //   } else if (!currentTrip) {
+  //     // Trip not found, redirect back
+  //     router.push("/carrier/trips")
+  //   } else if (currentTrip.carrier_id !== user?.id) {
+  //     // Not authorized to edit this trip
+  //     router.push("/carrier/trips")
+  //   }
+  // }, [currentTrip, user?.id, router])
 
-  const handleNext = () => {
-    if (currentStep < 3) {
-      setCurrentStep(currentStep + 1)
-    }
-  }
+const handleNext = () => {
+  setTimeout(() => {
+    setCurrentStep((prev) => Math.min(prev + 1, 3));
+  }, 0);
+};
 
   const handleBack = () => {
     if (currentStep > 1) {
@@ -67,34 +118,47 @@ export default function EditTripPage() {
     }
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!selectedVehicle || !currentTrip) return
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
 
-    const updatedTrip = {
-      vehicleId: formData.vehicleId,
-      origin: formData.origin,
-      destination: formData.destination,
-      departureDate: formData.departureDate,
-      arrivalDate: formData.arrivalDate,
-      pricePerKg: Number.parseFloat(formData.pricePerKg),
-      availableCapacity: selectedVehicle.capacity - (currentTrip.totalCapacity - currentTrip.availableCapacity),
-      totalCapacity: selectedVehicle.capacity,
-      description: formData.description,
-    }
-
-    dataActions.updateTrip(tripId, updatedTrip)
-    router.push("/carrier/trips")
+  if (!selectedVehicle || !currentTrip) {
+    console.log("rada rada");
+    return;
   }
+
+  console.log("Submitting update for step", currentStep);
+
+  const updatedTrip = {
+    vehicle_id: formData.vehicle_id,
+    origin: formData.origin,
+    destination: formData.destination,
+    departure_date: formData.departure_date,
+    arrival_date: formData.arrival_date,
+    price_per_kg: Number.parseFloat(formData.price_per_kg),
+    available_capacity:
+      selectedVehicle.capacity -
+      (currentTrip.total_capacity - currentTrip.available_capacity),
+    total_capacity: selectedVehicle.capacity,
+    description: formData.description,
+  };
+
+  try {
+    await updateTripApi(tripId, updatedTrip);
+    router.push("/carrier/trips");
+  } catch (error) {
+    console.error("Failed to update trip:", error);
+  }
+};
+
 
   const canProceed = () => {
     switch (currentStep) {
       case 1:
-        return formData.vehicleId !== ""
+        return formData.vehicle_id !== ""
       case 2:
-        return formData.origin && formData.destination && formData.departureDate && formData.arrivalDate
+        return formData.origin && formData.destination && formData.departure_date && formData.arrival_date
       case 3:
-        return formData.pricePerKg !== ""
+        return formData.price_per_kg !== ""
       default:
         return false
     }
@@ -132,8 +196,12 @@ export default function EditTripPage() {
           </Link>
         </Button>
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Edit Trip #{tripId}</h1>
-          <p className="text-muted-foreground">Update your trip details and pricing.</p>
+          <h1 className="text-3xl font-bold text-foreground">
+            Edit Trip #{tripId}
+          </h1>
+          <p className="text-muted-foreground">
+            Update your trip details and pricing.
+          </p>
         </div>
       </div>
 
@@ -143,12 +211,16 @@ export default function EditTripPage() {
           <div key={step} className="flex items-center">
             <div
               className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                step <= currentStep ? "bg-secondary text-secondary-foreground" : "bg-muted text-muted-foreground"
+                step <= currentStep
+                  ? "bg-secondary text-secondary-foreground"
+                  : "bg-muted text-muted-foreground"
               }`}
             >
               {step}
             </div>
-            {step < 3 && <ArrowRight className="h-4 w-4 mx-2 text-muted-foreground" />}
+            {step < 3 && (
+              <ArrowRight className="h-4 w-4 mx-2 text-muted-foreground" />
+            )}
           </div>
         ))}
       </div>
@@ -161,8 +233,10 @@ export default function EditTripPage() {
             {currentStep === 3 && "Pricing & Details"}
           </CardTitle>
           <CardDescription>
-            {currentStep === 1 && "Choose which vehicle you'll use for this trip"}
-            {currentStep === 2 && "Update your origin, destination, and travel dates"}
+            {currentStep === 1 &&
+              "Choose which vehicle you'll use for this trip"}
+            {currentStep === 2 &&
+              "Update your origin, destination, and travel dates"}
             {currentStep === 3 && "Update your pricing and trip details"}
           </CardDescription>
         </CardHeader>
@@ -180,20 +254,30 @@ export default function EditTripPage() {
                         <div
                           key={vehicle.id}
                           className={`p-4 border rounded-lg cursor-pointer transition-colors ${
-                            formData.vehicleId === vehicle.id
+                            formData.vehicle_id === vehicle.id
                               ? "border-secondary bg-secondary/10"
                               : "border-border hover:border-secondary/50"
                           }`}
-                          onClick={() => setFormData({ ...formData, vehicleId: vehicle.id })}
+                          onClick={() =>
+                            setFormData({ ...formData, vehicle_id: vehicle.id })
+                          }
                         >
                           <div className="flex items-center justify-between">
                             <div>
-                              <p className="font-medium capitalize">{vehicle.type}</p>
-                              <p className="text-sm text-muted-foreground">{vehicle.licensePlate}</p>
+                              <p className="font-medium capitalize">
+                                {vehicle.type}
+                              </p>
+                              <p className="text-sm text-muted-foreground">
+                                {vehicle.license_plate}
+                              </p>
                             </div>
                             <div className="text-right">
-                              <p className="font-medium">{vehicle.capacity.toLocaleString()} kg</p>
-                              <p className="text-sm text-muted-foreground">Capacity</p>
+                              <p className="font-medium">
+                                {vehicle.capacity.toLocaleString()} kg
+                              </p>
+                              <p className="text-sm text-muted-foreground">
+                                Capacity
+                              </p>
                             </div>
                           </div>
                         </div>
@@ -201,8 +285,13 @@ export default function EditTripPage() {
                     </div>
                   ) : (
                     <div className="text-center py-8">
-                      <p className="text-muted-foreground mb-4">No vehicles available.</p>
-                      <Button variant="outline" onClick={() => router.push("/carrier/vehicles")}>
+                      <p className="text-muted-foreground mb-4">
+                        No vehicles available.
+                      </p>
+                      <Button
+                        variant="outline"
+                        onClick={() => router.push("/carrier/vehicles")}
+                      >
                         Add Vehicle First
                       </Button>
                     </div>
@@ -216,7 +305,10 @@ export default function EditTripPage() {
               <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="origin" className="flex items-center space-x-2">
+                    <Label
+                      htmlFor="origin"
+                      className="flex items-center space-x-2"
+                    >
                       <MapPin className="h-4 w-4" />
                       <span>Origin</span>
                     </Label>
@@ -224,13 +316,18 @@ export default function EditTripPage() {
                       id="origin"
                       placeholder="Starting city"
                       value={formData.origin}
-                      onChange={(e) => setFormData({ ...formData, origin: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, origin: e.target.value })
+                      }
                       required
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="destination" className="flex items-center space-x-2">
+                    <Label
+                      htmlFor="destination"
+                      className="flex items-center space-x-2"
+                    >
                       <MapPin className="h-4 w-4" />
                       <span>Destination</span>
                     </Label>
@@ -238,35 +335,56 @@ export default function EditTripPage() {
                       id="destination"
                       placeholder="Destination city"
                       value={formData.destination}
-                      onChange={(e) => setFormData({ ...formData, destination: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          destination: e.target.value,
+                        })
+                      }
                       required
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="departureDate" className="flex items-center space-x-2">
+                    <Label
+                      htmlFor="departureDate"
+                      className="flex items-center space-x-2"
+                    >
                       <Calendar className="h-4 w-4" />
                       <span>Departure Date</span>
                     </Label>
                     <Input
                       id="departureDate"
                       type="date"
-                      value={formData.departureDate}
-                      onChange={(e) => setFormData({ ...formData, departureDate: e.target.value })}
+                      value={formData.departure_date}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          departure_date: e.target.value,
+                        })
+                      }
                       required
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="arrivalDate" className="flex items-center space-x-2">
+                    <Label
+                      htmlFor="arrivalDate"
+                      className="flex items-center space-x-2"
+                    >
                       <Calendar className="h-4 w-4" />
                       <span>Arrival Date</span>
                     </Label>
                     <Input
                       id="arrivalDate"
                       type="date"
-                      value={formData.arrivalDate}
-                      onChange={(e) => setFormData({ ...formData, arrivalDate: e.target.value })}
+                      value={formData.arrival_date}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          arrival_date: e.target.value,
+                        })
+                      }
                       required
                     />
                   </div>
@@ -278,7 +396,10 @@ export default function EditTripPage() {
             {currentStep === 3 && (
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="pricePerKg" className="flex items-center space-x-2">
+                  <Label
+                    htmlFor="pricePerKg"
+                    className="flex items-center space-x-2"
+                  >
                     <DollarSign className="h-4 w-4" />
                     <span>Price per kg ($)</span>
                   </Label>
@@ -287,23 +408,35 @@ export default function EditTripPage() {
                     type="number"
                     step="0.01"
                     placeholder="Enter price per kg"
-                    value={formData.pricePerKg}
-                    onChange={(e) => setFormData({ ...formData, pricePerKg: e.target.value })}
+                    value={formData.price_per_kg}
+                    onChange={(e) =>
+                      setFormData({ ...formData, price_per_kg: e.target.value })
+                    }
                     required
                   />
                 </div>
 
-                {selectedVehicle && (
+                {selectedVehicle && currentTrip && (
                   <div className="p-4 bg-muted rounded-lg">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">Available Capacity:</span>
-                      <span className="font-medium">{currentTrip.availableCapacity.toLocaleString()} kg</span>
+                      <span className="text-sm text-muted-foreground">
+                        Available Capacity:
+                      </span>
+                      <span className="font-medium">
+                        {currentTrip.available_capacity.toLocaleString()} kg
+                      </span>
                     </div>
-                    {formData.pricePerKg && (
+                    {formData.price_per_kg && (
                       <div className="flex items-center justify-between mt-2">
-                        <span className="text-sm text-muted-foreground">Potential Earnings (Available):</span>
+                        <span className="text-sm text-muted-foreground">
+                          Potential Earnings (Available):
+                        </span>
                         <span className="font-medium text-accent">
-                          ${(currentTrip.availableCapacity * Number.parseFloat(formData.pricePerKg)).toLocaleString()}
+                          $
+                          {(
+                            currentTrip.available_capacity *
+                            Number.parseFloat(formData.price_per_kg)
+                          ).toLocaleString()}
                         </span>
                       </div>
                     )}
@@ -316,7 +449,9 @@ export default function EditTripPage() {
                     id="description"
                     placeholder="Add any special notes about this trip..."
                     value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, description: e.target.value })
+                    }
                     rows={3}
                   />
                 </div>
@@ -325,12 +460,21 @@ export default function EditTripPage() {
 
             {/* Navigation Buttons */}
             <div className="flex justify-between pt-6">
-              <Button type="button" variant="outline" onClick={handleBack} disabled={currentStep === 1}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleBack}
+                disabled={currentStep === 1}
+              >
                 Back
               </Button>
 
               {currentStep < 3 ? (
-                <Button type="button" onClick={handleNext} disabled={!canProceed()}>
+                <Button
+                  type="button"
+                  onClick={handleNext}
+                  disabled={!canProceed()}
+                >
                   Next
                 </Button>
               ) : (
@@ -343,5 +487,5 @@ export default function EditTripPage() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }
