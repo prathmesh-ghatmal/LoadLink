@@ -1,0 +1,345 @@
+"use client"
+import { useState } from "react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { useAuth } from "@/contexts/auth-context"
+import { bookings, trips, users, dataActions, reviews } from "@/lib/data"
+import { QRCodeDisplay } from "@/components/ui/qr-code-display"
+import { ReviewForm } from "@/components/ui/review-form"
+import { MapPin, Calendar, Weight, DollarSign, Phone, Mail, CheckCircle, Package, QrCode } from "lucide-react"
+
+export default function CarrierBookingsPage() {
+  const { user } = useAuth()
+  const [refreshTrigger, setRefreshTrigger] = useState(0)
+  const [showQR, setShowQR] = useState<string | null>(null)
+  const [showReviewForm, setShowReviewForm] = useState<string | null>(null)
+
+  const userTrips = trips.filter((t) => t.carrierId === user?.id)
+  const userBookings = bookings.filter((b) => userTrips.some((t) => t.id === b.tripId))
+
+  const pendingBookings = userBookings.filter((b) => b.status === "pending")
+  const acceptedBookings = userBookings.filter((b) => b.status === "accepted")
+  const fulfilledBookings = userBookings.filter((b) => b.status === "fulfilled")
+  const paidBookings = userBookings.filter((b) => b.status === "paid")
+
+  const handleAcceptBooking = (bookingId: string) => {
+    dataActions.updateBooking(bookingId, { status: "accepted" })
+    setRefreshTrigger((prev) => prev + 1)
+  }
+
+  const handleRejectBooking = (bookingId: string) => {
+    dataActions.updateBooking(bookingId, { status: "rejected" })
+    setRefreshTrigger((prev) => prev + 1)
+  }
+
+  const handleMarkFulfilled = (bookingId: string) => {
+    if (confirm("Mark this booking as fulfilled? This will notify the shipper that delivery is complete.")) {
+      dataActions.updateBooking(bookingId, {
+        status: "fulfilled",
+        fulfilledDate: new Date().toISOString().split("T")[0],
+      })
+      setRefreshTrigger((prev) => prev + 1)
+    }
+  }
+
+  const handleGenerateQR = (bookingId: string) => {
+    dataActions.generatePaymentQR(bookingId)
+    setShowQR(bookingId)
+    setRefreshTrigger((prev) => prev + 1)
+  }
+
+  const handleShowReviewForm = (bookingId: string) => {
+    setShowReviewForm(bookingId)
+  }
+
+  const handleReviewSubmit = () => {
+    setShowReviewForm(null)
+    setRefreshTrigger((prev) => prev + 1)
+  }
+
+  const renderBookingCard = (booking: any, showActions = false, showFulfillAction = false, showQRAction = false) => {
+    const trip = trips.find((t) => t.id === booking.tripId)
+    const shipper = users.find((u) => u.id === booking.shipperId)
+
+    if (!trip || !shipper) return null
+
+    const existingReview = reviews.find((r) => r.fromUserId === user?.id && r.bookingId === booking.id)
+    const canReview = booking.status === "paid" && !existingReview
+
+    return (
+      <Card key={`${booking.id}-${refreshTrigger}`}>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-lg">Booking #{booking.id}</CardTitle>
+            <Badge
+              variant={
+                booking.status === "pending"
+                  ? "secondary"
+                  : booking.status === "accepted"
+                    ? "default"
+                    : booking.status === "fulfilled"
+                      ? "outline"
+                      : "destructive"
+              }
+            >
+              {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+            </Badge>
+          </div>
+        </CardHeader>
+
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <MapPin className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm font-medium">{trip.origin}</span>
+            </div>
+            <div className="text-sm text-muted-foreground">→</div>
+            <div className="flex items-center space-x-2">
+              <MapPin className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm font-medium">{trip.destination}</span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4 text-sm">
+            <div className="flex items-center space-x-2">
+              <Calendar className="h-4 w-4 text-muted-foreground" />
+              <span>{new Date(trip.departureDate).toLocaleDateString()}</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Weight className="h-4 w-4 text-muted-foreground" />
+              <span>{booking.loadSize.toLocaleString()} kg</span>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <DollarSign className="h-4 w-4 text-muted-foreground" />
+              <span className="font-semibold text-accent">${booking.totalPrice.toLocaleString()}</span>
+            </div>
+            <span className="text-sm text-muted-foreground">
+              ${trip.pricePerKg}/kg × {booking.loadSize} kg
+            </span>
+          </div>
+
+          <div className="border-t pt-4">
+            <div className="flex items-center space-x-3 mb-3">
+              <Avatar>
+                <AvatarImage src={shipper.avatar || "/placeholder.svg"} alt={shipper.name} />
+                <AvatarFallback>{shipper.name.charAt(0)}</AvatarFallback>
+              </Avatar>
+              <div>
+                <p className="font-medium">{shipper.name}</p>
+                <div className="flex items-center space-x-1">
+                  <span className="text-sm text-muted-foreground">
+                    {shipper.rating} ⭐ ({shipper.reviewCount} reviews)
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-1 text-sm text-muted-foreground">
+              <div className="flex items-center space-x-2">
+                <Phone className="h-4 w-4" />
+                <span>{shipper.phone}</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Mail className="h-4 w-4" />
+                <span>{shipper.email}</span>
+              </div>
+            </div>
+          </div>
+
+          {booking.notes && (
+            <div className="bg-muted p-3 rounded">
+              <p className="text-sm">
+                <strong>Special Instructions:</strong> {booking.notes}
+              </p>
+            </div>
+          )}
+
+          {booking.fulfilledDate && (
+            <div className="bg-green-50 border border-green-200 p-3 rounded">
+              <p className="text-sm text-green-800">
+                <strong>Fulfilled on:</strong> {new Date(booking.fulfilledDate).toLocaleDateString()}
+              </p>
+              {booking.paidDate && (
+                <p className="text-sm text-green-800">
+                  <strong>Paid on:</strong> {new Date(booking.paidDate).toLocaleDateString()}
+                </p>
+              )}
+            </div>
+          )}
+
+          {showActions && (
+            <div className="flex space-x-2 pt-2">
+              <Button onClick={() => handleAcceptBooking(booking.id)} className="flex-1">
+                Accept
+              </Button>
+              <Button variant="outline" onClick={() => handleRejectBooking(booking.id)} className="flex-1">
+                Reject
+              </Button>
+            </div>
+          )}
+
+          {showFulfillAction && (
+            <div className="pt-2">
+              <Button onClick={() => handleMarkFulfilled(booking.id)} className="w-full">
+                <CheckCircle className="h-4 w-4 mr-2" />
+                Mark as Fulfilled
+              </Button>
+            </div>
+          )}
+
+          {showQRAction && (
+            <div className="pt-2 space-y-2">
+              {!booking.qrGenerated ? (
+                <Button onClick={() => handleGenerateQR(booking.id)} className="w-full" variant="outline">
+                  <QrCode className="h-4 w-4 mr-2" />
+                  Generate Payment QR
+                </Button>
+              ) : (
+                <div className="bg-blue-50 border border-blue-200 p-3 rounded">
+                  <p className="text-sm text-blue-800">
+                    <strong>Payment QR Generated:</strong> {new Date(booking.qrGeneratedDate!).toLocaleDateString()}
+                  </p>
+                  <Button onClick={() => setShowQR(booking.id)} variant="outline" size="sm" className="mt-2">
+                    View QR Code
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {canReview && (
+            <div className="pt-2">
+              <Button onClick={() => handleShowReviewForm(booking.id)} variant="outline" className="w-full">
+                Review Shipper
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    )
+  }
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold text-foreground">Booking Management</h1>
+        <p className="text-muted-foreground">Review and manage booking requests for your trips.</p>
+      </div>
+
+      <Tabs defaultValue="pending" className="w-full">
+        <TabsList className="grid w-full grid-cols-5">
+          <TabsTrigger value="pending">Pending ({pendingBookings.length})</TabsTrigger>
+          <TabsTrigger value="accepted">Accepted ({acceptedBookings.length})</TabsTrigger>
+          <TabsTrigger value="fulfilled">Fulfilled ({fulfilledBookings.length})</TabsTrigger>
+          <TabsTrigger value="paid">Paid ({paidBookings.length})</TabsTrigger>
+          <TabsTrigger value="all">All ({userBookings.length})</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="pending" className="space-y-4">
+          {pendingBookings.length > 0 ? (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {pendingBookings.map((booking) => renderBookingCard(booking, true))}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <Package className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+              <p className="text-muted-foreground">No pending booking requests.</p>
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="accepted" className="space-y-4">
+          {acceptedBookings.length > 0 ? (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {acceptedBookings.map((booking) => renderBookingCard(booking, false, true))}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground">No accepted bookings.</p>
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="fulfilled" className="space-y-4">
+          {fulfilledBookings.length > 0 ? (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {fulfilledBookings.map((booking) => renderBookingCard(booking, false, false, true))}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground">No fulfilled bookings yet.</p>
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="paid" className="space-y-4">
+          {paidBookings.length > 0 ? (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {paidBookings.map((booking) => renderBookingCard(booking))}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground">No paid bookings yet.</p>
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="all" className="space-y-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {userBookings.map((booking) =>
+              renderBookingCard(
+                booking,
+                booking.status === "pending",
+                booking.status === "accepted",
+                booking.status === "fulfilled",
+              ),
+            )}
+          </div>
+        </TabsContent>
+      </Tabs>
+
+      <Dialog open={!!showQR} onOpenChange={() => setShowQR(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Payment QR Code</DialogTitle>
+          </DialogHeader>
+          {showQR && (
+            <QRCodeDisplay
+              amount={bookings.find((b) => b.id === showQR)?.totalPrice || 0}
+              bookingId={showQR}
+              onClose={() => setShowQR(null)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!showReviewForm} onOpenChange={() => setShowReviewForm(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Review Shipper</DialogTitle>
+          </DialogHeader>
+          {showReviewForm && (
+            <ReviewForm
+              fromUserId={user?.id || ""}
+              toUserId={bookings.find((b) => b.id === showReviewForm)?.shipperId || ""}
+              toUserName={
+                users.find((u) => u.id === bookings.find((b) => b.id === showReviewForm)?.shipperId)?.name || ""
+              }
+              bookingId={showReviewForm}
+              userRole="carrier"
+              onSubmit={handleReviewSubmit}
+              onCancel={() => setShowReviewForm(null)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+    </div>
+  )
+}
