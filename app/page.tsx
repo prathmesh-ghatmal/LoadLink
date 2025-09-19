@@ -215,7 +215,7 @@ export default function HomePage() {
                 asChild
                 className="transform hover:scale-105 transition-all duration-200"
               >
-                <Link href="/trips">View All Trips</Link>
+                <Link href="/register">View All Trips</Link>
               </Button>
             </div>
           </FadeIn>
