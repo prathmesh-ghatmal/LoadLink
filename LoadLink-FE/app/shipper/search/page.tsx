@@ -1,6 +1,6 @@
 "use client"
 import { useState, useEffect } from "react"
-import { useSearchParams } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -73,9 +73,11 @@ export default function ShipperSearchPage() {
     setFilteredTrips(sorted)
   }
 
+  const router = useRouter();
+
   const handleBookTrip = (tripId: string) => {
     // Redirect to trip details page
-    window.location.href = `/shipper/trip/${tripId}`
+    router.push(`/shipper/trip/${tripId}`)
   }
 
   return (
