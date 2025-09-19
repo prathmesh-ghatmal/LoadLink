@@ -6,14 +6,39 @@ import { useAuth } from "@/contexts/auth-context"
 import { trips, bookings, vehicles, payments } from "@/lib/data"
 import { Truck, Package, DollarSign, Star, Plus, CreditCard } from "lucide-react"
 import Link from "next/link"
+import { getMyVehiclesApi, VehicleOut } from "@/services/vehicles"
+import { useEffect, useState } from "react"
+import { getMyTripsApi, TripOut } from "@/services/trips"
 
 export default function CarrierDashboard() {
   const { user } = useAuth()
-  const userTrips = trips.filter((t) => t.carrierId === user?.id)
-  const userVehicles = vehicles.filter((v) => v.carrierId === user?.id)
+  const [trips, setTrips] = useState<TripOut[]>([]);
+  const [vehicles, setVehicles] = useState<VehicleOut[]>([]);
+    useEffect(() => {
+      async function fetchData() {
+        try {
+          const [tripsRes, vehiclesRes] = await Promise.all([
+            getMyTripsApi(),
+            getMyVehiclesApi(),
+          ]);
+          setTrips(tripsRes);
+          setVehicles(vehiclesRes);
+
+          // if payments exist
+          // const paymentsRes = await getMyPaymentsApi()
+          // setPayments(paymentsRes)
+        } catch (err) {
+          console.error("Error fetching dashboard data:", err);
+        }
+      }
+
+      if (user) fetchData();
+    }, [user]);
+  const userTrips = trips.filter((t) => t.carrier_id === user?.id)
+  const userVehicles = vehicles.filter((v) => v.carrier_id === user?.id)
   const userBookings = bookings.filter((b) => {
     const trip = trips.find((t) => t.id === b.tripId)
-    return trip?.carrierId === user?.id
+    return trip?.carrier_id === user?.id
   })
   const recentTrips = userTrips.slice(0, 3)
 
