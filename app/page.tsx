@@ -39,8 +39,8 @@ export default function HomePage() {
 
           <FadeIn delay={0.4}>
             <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto text-pretty">
-              The premier logistics marketplace connecting shippers with reliable carriers across the nation. Ship
-              smarter, earn more.
+              The premier logistics marketplace connecting shippers with
+              reliable carriers across the nation. Ship smarter, earn more.
             </p>
           </FadeIn>
 
@@ -69,7 +69,9 @@ export default function HomePage() {
           </SlideIn>
 
           <FadeIn delay={0.8}>
-            <SearchForm onSearch={handleSearch} />
+            <Button asChild>
+              <Link href="/register">Get Started</Link>
+            </Button>
           </FadeIn>
         </div>
       </section>
@@ -79,7 +81,9 @@ export default function HomePage() {
         <div className="container mx-auto px-4">
           <FadeIn delay={0.2}>
             <div className="text-center mb-16">
-              <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">Why Choose LoadLink?</h2>
+              <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+                Why Choose LoadLink?
+              </h2>
               <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
                 We make logistics simple, secure, and profitable for everyone.
               </p>
@@ -95,7 +99,8 @@ export default function HomePage() {
                 </CardHeader>
                 <CardContent>
                   <CardDescription>
-                    All carriers are verified and insured. Your cargo is protected every mile of the journey.
+                    All carriers are verified and insured. Your cargo is
+                    protected every mile of the journey.
                   </CardDescription>
                 </CardContent>
               </Card>
@@ -109,7 +114,8 @@ export default function HomePage() {
                 </CardHeader>
                 <CardContent>
                   <CardDescription>
-                    Track your shipments in real-time with GPS monitoring and instant notifications.
+                    Track your shipments in real-time with GPS monitoring and
+                    instant notifications.
                   </CardDescription>
                 </CardContent>
               </Card>
@@ -123,7 +129,8 @@ export default function HomePage() {
                 </CardHeader>
                 <CardContent>
                   <CardDescription>
-                    Competitive pricing with transparent fees. No hidden costs, just fair rates.
+                    Competitive pricing with transparent fees. No hidden costs,
+                    just fair rates.
                   </CardDescription>
                 </CardContent>
               </Card>
@@ -137,7 +144,8 @@ export default function HomePage() {
                 </CardHeader>
                 <CardContent>
                   <CardDescription>
-                    Our dedicated support team is available around the clock to assist you.
+                    Our dedicated support team is available around the clock to
+                    assist you.
                   </CardDescription>
                 </CardContent>
               </Card>
@@ -151,7 +159,8 @@ export default function HomePage() {
                 </CardHeader>
                 <CardContent>
                   <CardDescription>
-                    Book shipments in minutes with our intuitive platform and mobile app.
+                    Book shipments in minutes with our intuitive platform and
+                    mobile app.
                   </CardDescription>
                 </CardContent>
               </Card>
@@ -165,7 +174,8 @@ export default function HomePage() {
                 </CardHeader>
                 <CardContent>
                   <CardDescription>
-                    Choose from top-rated carriers with verified reviews and performance history.
+                    Choose from top-rated carriers with verified reviews and
+                    performance history.
                   </CardDescription>
                 </CardContent>
               </Card>
@@ -179,7 +189,9 @@ export default function HomePage() {
         <div className="container mx-auto px-4">
           <FadeIn delay={0.2}>
             <div className="text-center mb-16">
-              <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">Available Trips</h2>
+              <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+                Available Trips
+              </h2>
               <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
                 Browse some of our featured shipping opportunities.
               </p>
@@ -198,8 +210,12 @@ export default function HomePage() {
 
           <FadeIn delay={0.6}>
             <div className="text-center">
-              <Button size="lg" asChild className="transform hover:scale-105 transition-all duration-200">
-                <Link href="/trips">View All Trips</Link>
+              <Button
+                size="lg"
+                asChild
+                className="transform hover:scale-105 transition-all duration-200"
+              >
+                <Link href="/register">View All Trips</Link>
               </Button>
             </div>
           </FadeIn>
@@ -210,11 +226,14 @@ export default function HomePage() {
       <section className="py-20 bg-primary text-primary-foreground">
         <div className="container mx-auto px-4 text-center">
           <FadeIn delay={0.2}>
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">Ready to Get Started?</h2>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+              Ready to Get Started?
+            </h2>
           </FadeIn>
           <FadeIn delay={0.4}>
             <p className="text-xl mb-8 max-w-2xl mx-auto opacity-90">
-              Join thousands of shippers and carriers who trust LoadLink for their logistics needs.
+              Join thousands of shippers and carriers who trust LoadLink for
+              their logistics needs.
             </p>
           </FadeIn>
           <SlideIn direction="up" delay={0.6}>
@@ -232,5 +251,5 @@ export default function HomePage() {
 
       <Footer />
     </div>
-  )
+  );
 }

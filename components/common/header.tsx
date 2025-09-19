@@ -42,12 +42,7 @@ export function Header() {
         </Link>
 
         <nav className="hidden md:flex items-center space-x-6">
-          <Link href="/" className="text-sm font-medium hover:text-primary transition-colors">
-            Home
-          </Link>
-          <Link href="/trips" className="text-sm font-medium hover:text-primary transition-colors">
-            Browse Trips
-          </Link>
+         
           {isAuthenticated && user && (
             <>
               {user.role === "shipper" && (
