@@ -10,6 +10,7 @@ import { useAuth } from "@/contexts/auth-context"
 import { bookings, payments } from "@/lib/data"
 import { Package, Search, Clock, CheckCircle, CreditCard } from "lucide-react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 
 export default function ShipperDashboard() {
   const { user } = useAuth()
@@ -26,6 +27,8 @@ export default function ShipperDashboard() {
     totalSpent: userPayments.reduce((sum, p) => sum + p.amount, 0),
   }
 
+  const router = useRouter();
+
   const handleQuickSearch = (searchData: {
     origin: string
     destination: string
@@ -36,7 +39,7 @@ export default function ShipperDashboard() {
     if (searchData.destination) params.set("destination", searchData.destination)
     if (searchData.date) params.set("date", searchData.date)
 
-    window.location.href = `/trips?${params.toString()}`
+    router.push(`/shipper/search?${params.toString()}`);
   }
 
   return (
