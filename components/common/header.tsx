@@ -72,7 +72,7 @@ export function Header() {
         <div className="flex items-center space-x-4">
           {isAuthenticated && user ? (
             <DropdownMenu>
-              <DropdownMenuTrigger asChild>
+              <DropdownMenuTrigger >
                 <Button variant="ghost" className="flex items-center space-x-2">
                   <div className={getRoleColor()}>{getRoleIcon()}</div>
                   <span>{user.name}</span>

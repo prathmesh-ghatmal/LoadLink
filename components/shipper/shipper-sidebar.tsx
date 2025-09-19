@@ -36,7 +36,7 @@ export function ShipperSidebar() {
   const pathname = usePathname()
 
   return (
-    <div className="w-64 bg-card border-r border-border h-full">
+    <div className="w-64 bg-card border-r border-border h-screen sticky top-16 ">
       <div className="p-6">
         <div className="flex items-center space-x-2 mb-8">
           <Package className="h-6 w-6 text-primary" />
