@@ -86,8 +86,7 @@ def get_trip(trip_id: UUID, db: Session = Depends(get_db), current_user: User = 
     trip = db.query(Trip).filter(Trip.id == trip_id).first()
     if not trip:
         raise HTTPException(status_code=404, detail="Trip not found")
-    if trip.carrier_id != current_user.id:
-        raise HTTPException(status_code=403, detail="You do not own this trip")
+    
     return trip
 
 # ---------------------------

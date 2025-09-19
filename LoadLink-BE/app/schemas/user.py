@@ -1,8 +1,13 @@
-from pydantic import BaseModel, EmailStr, constr
+from pydantic import BaseModel, EmailStr, Field, constr
 from datetime import date
 from enum import Enum
 from uuid import UUID
 from typing import Optional
+
+from pydantic import BaseModel, EmailStr
+from uuid import UUID
+from datetime import date
+
 
 class UserRole(str, Enum):
     shipper = "shipper"
@@ -25,6 +30,8 @@ class UserLogin(BaseModel):
 # -----------------
 # Responses
 # -----------------
+
+
 class UserOut(BaseModel):
     id: UUID
     name: str
@@ -36,8 +43,10 @@ class UserOut(BaseModel):
     joined_date: date
     avatar: Optional[str]
 
-    class Config:
-        orm_mode = True
+    model_config = {
+        "from_attributes": True  # replaces orm_mode=True in Pydantic v2
+    }
+
 
 class TokenOut(BaseModel):
     access_token: str

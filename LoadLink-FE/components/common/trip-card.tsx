@@ -6,18 +6,36 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import type { Trip } from "@/lib/data"
 import { users, vehicles } from "@/lib/data"
 import { MapPin, Calendar, Star, Weight } from "lucide-react"
+import { TripOut } from "@/services/trips"
+import { tr } from "date-fns/locale"
+import { useEffect, useState } from "react"
+import { getUserByIdApi, UserOut } from "@/services/user"
+import { getVehicleByIdApi, VehicleOut } from "@/services/vehicles"
 
 interface TripCardProps {
-  trip: Trip
+  trip: TripOut
   showBookButton?: boolean
   onBook?: (tripId: string) => void
 }
 
 export function TripCard({ trip, showBookButton = true, onBook }: TripCardProps) {
-  const carrier = users.find((u) => u.id === trip.carrierId)
-  const vehicle = vehicles.find((v) => v.id === trip.vehicleId)
+ const [carrier, setCarrier] = useState<UserOut | null>(null);
+ const [vehicle, setVehicle] = useState<VehicleOut | null>(null);
+  useEffect(() => {
+    // Fetch carrier
+    getUserByIdApi(trip.carrier_id)
+      .then(setCarrier)
+      .catch((err) => console.error("Failed to fetch carrier:", err));
 
-  if (!carrier || !vehicle) return null
+    // Fetch vehicle
+    getVehicleByIdApi(trip.vehicle_id)
+      .then(setVehicle)
+      .catch((err) => console.error("Failed to fetch vehicle:", err));
+  }, [trip.carrier_id, trip.vehicle_id]);
+
+  if (!carrier || !vehicle) {
+    console.log("khali hai")
+    return null}
 
   return (
     <Card className="hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 group">
@@ -33,7 +51,7 @@ export function TripCard({ trip, showBookButton = true, onBook }: TripCardProps)
               <div className="flex items-center space-x-1">
                 <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
                 <span className="text-sm text-muted-foreground">
-                  {carrier.rating} ({carrier.reviewCount} reviews)
+                  {carrier.rating} ({carrier.review_count} reviews)
                 </span>
               </div>
             </div>
@@ -60,17 +78,17 @@ export function TripCard({ trip, showBookButton = true, onBook }: TripCardProps)
         <div className="grid grid-cols-2 gap-4 text-sm">
           <div className="flex items-center space-x-2">
             <Calendar className="h-4 w-4 text-muted-foreground" />
-            <span>{new Date(trip.departureDate).toLocaleDateString()}</span>
+            <span>{new Date(trip.departure_date).toLocaleDateString()}</span>
           </div>
           <div className="flex items-center space-x-2">
             <Weight className="h-4 w-4 text-muted-foreground" />
-            <span>{trip.availableCapacity.toLocaleString()} kg available</span>
+            <span>{trip.available_capacity.toLocaleString()} kg available</span>
           </div>
         </div>
 
         <div className="flex items-center justify-between pt-2">
           <div className="text-lg font-bold text-accent transition-colors duration-300 group-hover:text-accent/80">
-            ${trip.pricePerKg}/kg
+            ${trip.price_per_kg}/kg
           </div>
           {showBookButton && onBook && (
             <Button

@@ -42,3 +42,10 @@ export const updateVehicleApi = async (
 export const deleteVehicleApi = async (vehicleId: string): Promise<void> => {
   await api.delete(`/vehicles/${vehicleId}`);
 };
+
+
+// Get vehicle by ID
+export const getVehicleByIdApi = async (vehicleId: string): Promise<VehicleOut> => {
+  const res = await api.get(`/vehicles/${vehicleId}`);
+  return res.data;
+};

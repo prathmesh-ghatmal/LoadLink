@@ -61,7 +61,7 @@ def get_vehicles(db: Session = Depends(get_db), current_user: User = Depends(get
 # ---------------------------
 @vehicle_router.get("/{vehicle_id}", response_model=VehicleOut)
 def get_vehicle(vehicle_id: UUID, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    vehicle = db.query(Vehicle).filter(Vehicle.id == vehicle_id, Vehicle.carrier_id == current_user.id).first()
+    vehicle = db.query(Vehicle).filter(Vehicle.id == vehicle_id).first()
     if not vehicle:
         raise HTTPException(status_code=404, detail="Vehicle not found")
     return vehicle

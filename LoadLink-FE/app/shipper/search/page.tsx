@@ -6,12 +6,42 @@ import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { SearchForm } from "@/components/common/search-form"
 import { TripCard } from "@/components/common/trip-card"
-import { trips } from "@/lib/data"
+
 import { Filter } from "lucide-react"
+import { getAllTripsApi,  TripOut } from "@/services/trips"
+import { useAuth } from "@/contexts/auth-context"
+import { tr } from "date-fns/locale"
+import { set } from "date-fns"
+
 
 export default function ShipperSearchPage() {
+  const { user } = useAuth()
   const searchParams = useSearchParams()
-  const [filteredTrips, setFilteredTrips] = useState(trips)
+const [trips, setTrips] = useState<TripOut[]>([]);
+const [filteredTrips, setFilteredTrips] = useState<TripOut[]>([]);
+
+// Fetch trips only once when user is available
+useEffect(() => {
+  if (!user) return;
+  const fetchData = async () => {
+    try {
+      const tripsRes = await getAllTripsApi();
+      setTrips(tripsRes);
+    } catch (err) {
+      console.error("Error fetching trips:", err);
+    }
+  };
+  fetchData();
+}, [user]);
+
+// Update filteredTrips whenever trips change
+useEffect(() => {
+  setFilteredTrips(trips);
+}, [trips]);
+
+  
+  console.log(trips)
+  console.log(filteredTrips)
   const [vehicleFilter, setVehicleFilter] = useState<string>("all")
   const [sortBy, setSortBy] = useState<string>("date")
 
@@ -32,7 +62,7 @@ export default function ShipperSearchPage() {
 
   const handleSearch = (searchData: { origin: string; destination: string; date: string }) => {
     let filtered = trips
-
+   
     if (searchData.origin) {
       filtered = filtered.filter((trip) => trip.origin.toLowerCase().includes(searchData.origin.toLowerCase()))
     }
@@ -44,7 +74,9 @@ export default function ShipperSearchPage() {
     }
 
     if (searchData.date) {
-      filtered = filtered.filter((trip) => trip.departureDate >= searchData.date)
+      filtered = filtered.filter(
+        (trip) => trip.departure_date >= searchData.date
+      );
     }
 
     setFilteredTrips(filtered)
@@ -61,11 +93,11 @@ export default function ShipperSearchPage() {
     const sorted = [...filteredTrips].sort((a, b) => {
       switch (value) {
         case "price-low":
-          return a.pricePerKg - b.pricePerKg
+          return a.price_per_kg - b.price_per_kg;
         case "price-high":
-          return b.pricePerKg - a.pricePerKg
+          return b.price_per_kg - a.price_per_kg;
         case "date":
-          return new Date(a.departureDate).getTime() - new Date(b.departureDate).getTime()
+          return new Date(a.departure_date).getTime() - new Date(b.departure_date).getTime();
         default:
           return 0
       }
@@ -79,7 +111,7 @@ export default function ShipperSearchPage() {
     // Redirect to trip details page
     router.push(`/shipper/trip/${tripId}`)
   }
-
+  console.log("these are trips", filteredTrips)
   return (
     <div className="space-y-6">
       <div>
