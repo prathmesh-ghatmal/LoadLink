@@ -1,53 +1,51 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { LoadingSpinner } from "@/components/ui/loading-spinner"
-import { FadeIn } from "@/components/ui/fade-in"
-import { SlideIn } from "@/components/ui/slide-in"
-import { useAuth } from "@/contexts/auth-context"
-import { mockLogin } from "@/lib/auth"
-import { Truck, Package } from "lucide-react"
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { FadeIn } from "@/components/ui/fade-in";
+import { SlideIn } from "@/components/ui/slide-in";
+import { useAuth } from "@/contexts/auth-context";
+import { loginApi } from "@/lib/auth";
+import { Truck, Package } from "lucide-react";
 
 export function LoginForm() {
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [error, setError] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
-  const { login } = useAuth()
-  const router = useRouter()
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const { login } = useAuth();
+  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
-    setError("")
+    e.preventDefault();
+    setIsLoading(true);
+    setError("");
 
     try {
-      const user = mockLogin(email, password)
-      if (user) {
-        login(user)
-        // Redirect based on role
-        if (user.role === "shipper") {
-          router.push("/shipper/dashboard")
-        } else if (user.role === "carrier") {
-          router.push("/carrier/dashboard")
-        }
-      } else {
-        setError("Invalid email or password")
-      }
-    } catch (err) {
-      setError("Login failed. Please try again.")
+      const user = await loginApi(email, password);
+      login(user);
+      if (user.role === "shipper") router.push("/shipper/dashboard");
+      else router.push("/carrier/dashboard");
+    } catch (err: any) {
+      setError(err.response?.data?.detail || "Login failed");
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
     <FadeIn>
@@ -142,5 +140,5 @@ export function LoginForm() {
         </CardContent>
       </Card>
     </FadeIn>
-  )
+  );
 }

@@ -15,13 +15,13 @@ export interface User {
 }
 
 export interface Vehicle {
-  id: string
-  carrierId: string
-  type: "truck" | "van" | "trailer" | "container"
-  capacity: number // in kg
-  licensePlate: string
-  rcNumber: string
-  isActive: boolean
+  id: string;
+  carrier_id: string;
+  type: "truck" | "van" | "trailer" | "container";
+  capacity: number; // in kg
+  license_plate: string;
+  rc_number: string;
+  is_active: boolean;
 }
 
 export interface Trip {
@@ -127,32 +127,32 @@ export const users: User[] = [
 export const vehicles: Vehicle[] = [
   {
     id: "1",
-    carrierId: "2",
+    carrier_id: "2",
     type: "truck",
     capacity: 5000,
-    licensePlate: "TX-1234",
-    rcNumber: "RC123456",
-    isActive: true,
+    license_plate: "TX-1234",
+    rc_number: "RC123456",
+    is_active: true,
   },
   {
     id: "2",
-    carrierId: "2",
+    carrier_id: "2",
     type: "trailer",
     capacity: 15000,
-    licensePlate: "TX-5678",
-    rcNumber: "RC789012",
-    isActive: true,
+    license_plate: "TX-5678",
+    rc_number: "RC789012",
+    is_active: true,
   },
   {
     id: "3",
-    carrierId: "4",
+    carrier_id: "4",
     type: "van",
     capacity: 2000,
-    licensePlate: "CA-9876",
-    rcNumber: "RC345678",
-    isActive: true,
+    license_plate: "CA-9876",
+    rc_number: "RC345678",
+    is_active: true,
   },
-]
+];
 
 // Mock Trips
 export const trips: Trip[] = [

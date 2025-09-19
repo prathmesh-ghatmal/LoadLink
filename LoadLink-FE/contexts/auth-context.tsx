@@ -1,64 +1,70 @@
-"use client"
+// contexts/auth-context.tsx
+"use client";
 
-import type React from "react"
-import { createContext, useContext, useState, useEffect } from "react"
-import type { User, UserRole } from "@/lib/data"
-import { getStoredAuth, setStoredAuth, type AuthState } from "@/lib/auth"
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+} from "react";
+import type { User, UserRole } from "@/lib/data";
+import { getStoredAuth, setStoredAuth } from "@/lib/auth";
 
-interface AuthContextType extends AuthState {
-  login: (user: User) => void
-  logout: () => void
-  updateUser: (user: User) => void
+interface AuthContextType {
+  user: User | null;
+  isAuthenticated: boolean;
+  role: UserRole;
+  loading: boolean;
+  login: (user: User) => void;
+  logout: () => void;
+  updateUser: (user: User) => void;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined)
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [authState, setAuthState] = useState<AuthState>({
-    user: null,
-    isAuthenticated: false,
-    role: "guest",
-  })
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [user, setUser] = useState<User | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [role, setRole] = useState<UserRole>("guest");
+  const [loading, setLoading] = useState(true); // <-- added
 
   useEffect(() => {
-    const stored = getStoredAuth()
-    setAuthState(stored)
-  }, [])
+    const stored = getStoredAuth();
+    setUser(stored.user);
+    setIsAuthenticated(stored.isAuthenticated);
+    setRole(stored.role);
+    setLoading(false); // <-- done loading
+  }, []);
 
   const login = (user: User) => {
-    const newState = {
-      user,
-      isAuthenticated: true,
-      role: user.role,
-    }
-    setAuthState(newState)
-    setStoredAuth(user)
-  }
+    setUser(user);
+    setIsAuthenticated(true);
+    setRole(user.role);
+    setStoredAuth(user, localStorage.getItem("access_token") || undefined);
+  };
 
   const logout = () => {
-    const newState = {
-      user: null,
-      isAuthenticated: false,
-      role: "guest" as UserRole,
-    }
-    setAuthState(newState)
-    setStoredAuth(null)
-  }
+    setUser(null);
+    setIsAuthenticated(false);
+    setRole("guest");
+    setStoredAuth(null);
+  };
 
   const updateUser = (user: User) => {
-    const newState = {
-      user,
-      isAuthenticated: true,
-      role: user.role,
-    }
-    setAuthState(newState)
-    setStoredAuth(user)
-  }
+    setUser(user);
+    setIsAuthenticated(true);
+    setRole(user.role);
+    setStoredAuth(user, localStorage.getItem("access_token") || undefined);
+  };
 
   return (
     <AuthContext.Provider
       value={{
-        ...authState,
+        user,
+        isAuthenticated,
+        role,
+        loading,
         login,
         logout,
         updateUser,
@@ -66,13 +72,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     >
       {children}
     </AuthContext.Provider>
-  )
+  );
 }
 
 export function useAuth() {
-  const context = useContext(AuthContext)
-  if (context === undefined) {
-    throw new Error("useAuth must be used within an AuthProvider")
-  }
-  return context
+  const context = useContext(AuthContext);
+  if (!context) throw new Error("useAuth must be used within AuthProvider");
+  return context;
 }

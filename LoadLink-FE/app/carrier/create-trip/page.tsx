@@ -1,5 +1,5 @@
 "use client"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import type React from "react"
 
 import { useRouter } from "next/navigation"
@@ -9,13 +9,17 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { useAuth } from "@/contexts/auth-context"
-import { vehicles, trips } from "@/lib/data"
+import {  trips } from "@/lib/data"
 import { ArrowRight, MapPin, Calendar, DollarSign } from "lucide-react"
+import { getMyVehiclesApi, VehicleOut } from "@/services/vehicles"
+import { createTripApi, TripCreate } from "@/services/trips"
 
 export default function CreateTripPage() {
-  const { user } = useAuth()
-  const router = useRouter()
-  const [currentStep, setCurrentStep] = useState(1)
+  const { user } = useAuth();
+  const router = useRouter();
+  const [currentStep, setCurrentStep] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [vehicles, setVehicles] = useState<VehicleOut[]>([]);
   const [formData, setFormData] = useState({
     vehicleId: "",
     origin: "",
@@ -24,65 +28,98 @@ export default function CreateTripPage() {
     arrivalDate: "",
     pricePerKg: "",
     description: "",
-  })
+  });
 
-  const userVehicles = vehicles.filter((v) => v.carrierId === user?.id && v.isActive)
-  const selectedVehicle = vehicles.find((v) => v.id === formData.vehicleId)
+  // Fetch vehicles from API
+  useEffect(() => {
+    const fetchVehicles = async () => {
+      try {
+        const res = await getMyVehiclesApi();
+        setVehicles(res);
+      } catch (error) {
+        console.error("Failed to fetch vehicles:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchVehicles();
+  }, []);
+
+  console.log(vehicles);
+
+  const userVehicles = vehicles.filter(
+    (v) => v.carrier_id === user?.id && v.is_active
+  );
+  const selectedVehicle = vehicles.find((v) => v.id === formData.vehicleId);
 
   const handleNext = () => {
     if (currentStep < 3) {
-      setCurrentStep(currentStep + 1)
+      setCurrentStep(currentStep + 1);
     }
-  }
+  };
 
   const handleBack = () => {
     if (currentStep > 1) {
-      setCurrentStep(currentStep - 1)
+      setCurrentStep(currentStep - 1);
     }
-  }
+  };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!selectedVehicle) return
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedVehicle) return;
 
-    // In a real app, this would make an API call
-    const newTrip = {
-      id: Date.now().toString(),
-      carrierId: user?.id || "",
-      vehicleId: formData.vehicleId,
-      origin: formData.origin,
-      destination: formData.destination,
-      departureDate: formData.departureDate,
-      arrivalDate: formData.arrivalDate,
-      pricePerKg: Number.parseFloat(formData.pricePerKg),
-      availableCapacity: selectedVehicle.capacity,
-      totalCapacity: selectedVehicle.capacity,
-      status: "active" as const,
-      description: formData.description,
+    try {
+      // prepare payload in the format TripCreate expects
+      const newTrip: TripCreate = {
+        vehicle_id: formData.vehicleId,
+        origin: formData.origin,
+        destination: formData.destination,
+        departure_date: formData.departureDate, // must be ISO string (YYYY-MM-DDTHH:mm:ss)
+        arrival_date: formData.arrivalDate,
+        price_per_kg: Number(formData.pricePerKg),
+        available_capacity: selectedVehicle.capacity,
+        status: "active",
+        description: formData.description,
+      };
+
+      // API call
+      const createdTrip = await createTripApi(newTrip);
+
+      console.log("Trip created successfully:", createdTrip);
+
+      // redirect to trips list
+      router.push("/carrier/trips");
+    } catch (error) {
+      console.error("Error creating trip:", error);
+      // optional: show toast notification
     }
-
-    trips.push(newTrip)
-    router.push("/carrier/trips")
-  }
+  };
 
   const canProceed = () => {
     switch (currentStep) {
       case 1:
-        return formData.vehicleId !== ""
+        return formData.vehicleId !== "";
       case 2:
-        return formData.origin && formData.destination && formData.departureDate && formData.arrivalDate
+        return (
+          formData.origin &&
+          formData.destination &&
+          formData.departureDate &&
+          formData.arrivalDate
+        );
       case 3:
-        return formData.pricePerKg !== ""
+        return formData.pricePerKg !== "";
       default:
-        return false
+        return false;
     }
-  }
+  };
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold text-foreground">Create New Trip</h1>
-        <p className="text-muted-foreground">Set up a new trip to find shippers.</p>
+        <p className="text-muted-foreground">
+          Set up a new trip to find shippers.
+        </p>
       </div>
 
       {/* Progress Steps */}
@@ -91,12 +128,16 @@ export default function CreateTripPage() {
           <div key={step} className="flex items-center">
             <div
               className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                step <= currentStep ? "bg-secondary text-secondary-foreground" : "bg-muted text-muted-foreground"
+                step <= currentStep
+                  ? "bg-secondary text-secondary-foreground"
+                  : "bg-muted text-muted-foreground"
               }`}
             >
               {step}
             </div>
-            {step < 3 && <ArrowRight className="h-4 w-4 mx-2 text-muted-foreground" />}
+            {step < 3 && (
+              <ArrowRight className="h-4 w-4 mx-2 text-muted-foreground" />
+            )}
           </div>
         ))}
       </div>
@@ -109,8 +150,10 @@ export default function CreateTripPage() {
             {currentStep === 3 && "Pricing & Details"}
           </CardTitle>
           <CardDescription>
-            {currentStep === 1 && "Choose which vehicle you'll use for this trip"}
-            {currentStep === 2 && "Set your origin, destination, and travel dates"}
+            {currentStep === 1 &&
+              "Choose which vehicle you'll use for this trip"}
+            {currentStep === 2 &&
+              "Set your origin, destination, and travel dates"}
             {currentStep === 3 && "Set your pricing and add trip details"}
           </CardDescription>
         </CardHeader>
@@ -132,16 +175,26 @@ export default function CreateTripPage() {
                               ? "border-secondary bg-secondary/10"
                               : "border-border hover:border-secondary/50"
                           }`}
-                          onClick={() => setFormData({ ...formData, vehicleId: vehicle.id })}
+                          onClick={() =>
+                            setFormData({ ...formData, vehicleId: vehicle.id })
+                          }
                         >
                           <div className="flex items-center justify-between">
                             <div>
-                              <p className="font-medium capitalize">{vehicle.type}</p>
-                              <p className="text-sm text-muted-foreground">{vehicle.licensePlate}</p>
+                              <p className="font-medium capitalize">
+                                {vehicle.type}
+                              </p>
+                              <p className="text-sm text-muted-foreground">
+                                {vehicle.license_plate}
+                              </p>
                             </div>
                             <div className="text-right">
-                              <p className="font-medium">{vehicle.capacity.toLocaleString()} kg</p>
-                              <p className="text-sm text-muted-foreground">Capacity</p>
+                              <p className="font-medium">
+                                {vehicle.capacity.toLocaleString()} kg
+                              </p>
+                              <p className="text-sm text-muted-foreground">
+                                Capacity
+                              </p>
                             </div>
                           </div>
                         </div>
@@ -149,8 +202,13 @@ export default function CreateTripPage() {
                     </div>
                   ) : (
                     <div className="text-center py-8">
-                      <p className="text-muted-foreground mb-4">No vehicles available.</p>
-                      <Button variant="outline" onClick={() => router.push("/carrier/vehicles")}>
+                      <p className="text-muted-foreground mb-4">
+                        No vehicles available.
+                      </p>
+                      <Button
+                        variant="outline"
+                        onClick={() => router.push("/carrier/vehicles")}
+                      >
                         Add Vehicle First
                       </Button>
                     </div>
@@ -164,7 +222,10 @@ export default function CreateTripPage() {
               <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="origin" className="flex items-center space-x-2">
+                    <Label
+                      htmlFor="origin"
+                      className="flex items-center space-x-2"
+                    >
                       <MapPin className="h-4 w-4" />
                       <span>Origin</span>
                     </Label>
@@ -172,13 +233,18 @@ export default function CreateTripPage() {
                       id="origin"
                       placeholder="Starting city"
                       value={formData.origin}
-                      onChange={(e) => setFormData({ ...formData, origin: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, origin: e.target.value })
+                      }
                       required
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="destination" className="flex items-center space-x-2">
+                    <Label
+                      htmlFor="destination"
+                      className="flex items-center space-x-2"
+                    >
                       <MapPin className="h-4 w-4" />
                       <span>Destination</span>
                     </Label>
@@ -186,13 +252,21 @@ export default function CreateTripPage() {
                       id="destination"
                       placeholder="Destination city"
                       value={formData.destination}
-                      onChange={(e) => setFormData({ ...formData, destination: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          destination: e.target.value,
+                        })
+                      }
                       required
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="departureDate" className="flex items-center space-x-2">
+                    <Label
+                      htmlFor="departureDate"
+                      className="flex items-center space-x-2"
+                    >
                       <Calendar className="h-4 w-4" />
                       <span>Departure Date</span>
                     </Label>
@@ -200,13 +274,21 @@ export default function CreateTripPage() {
                       id="departureDate"
                       type="date"
                       value={formData.departureDate}
-                      onChange={(e) => setFormData({ ...formData, departureDate: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          departureDate: e.target.value,
+                        })
+                      }
                       required
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="arrivalDate" className="flex items-center space-x-2">
+                    <Label
+                      htmlFor="arrivalDate"
+                      className="flex items-center space-x-2"
+                    >
                       <Calendar className="h-4 w-4" />
                       <span>Arrival Date</span>
                     </Label>
@@ -214,7 +296,12 @@ export default function CreateTripPage() {
                       id="arrivalDate"
                       type="date"
                       value={formData.arrivalDate}
-                      onChange={(e) => setFormData({ ...formData, arrivalDate: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          arrivalDate: e.target.value,
+                        })
+                      }
                       required
                     />
                   </div>
@@ -226,7 +313,10 @@ export default function CreateTripPage() {
             {currentStep === 3 && (
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="pricePerKg" className="flex items-center space-x-2">
+                  <Label
+                    htmlFor="pricePerKg"
+                    className="flex items-center space-x-2"
+                  >
                     <DollarSign className="h-4 w-4" />
                     <span>Price per kg ($)</span>
                   </Label>
@@ -236,7 +326,9 @@ export default function CreateTripPage() {
                     step="0.01"
                     placeholder="Enter price per kg"
                     value={formData.pricePerKg}
-                    onChange={(e) => setFormData({ ...formData, pricePerKg: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, pricePerKg: e.target.value })
+                    }
                     required
                   />
                 </div>
@@ -244,14 +336,24 @@ export default function CreateTripPage() {
                 {selectedVehicle && (
                   <div className="p-4 bg-muted rounded-lg">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">Available Capacity:</span>
-                      <span className="font-medium">{selectedVehicle.capacity.toLocaleString()} kg</span>
+                      <span className="text-sm text-muted-foreground">
+                        Available Capacity:
+                      </span>
+                      <span className="font-medium">
+                        {selectedVehicle.capacity.toLocaleString()} kg
+                      </span>
                     </div>
                     {formData.pricePerKg && (
                       <div className="flex items-center justify-between mt-2">
-                        <span className="text-sm text-muted-foreground">Max Potential Earnings:</span>
+                        <span className="text-sm text-muted-foreground">
+                          Max Potential Earnings:
+                        </span>
                         <span className="font-medium text-accent">
-                          ${(selectedVehicle.capacity * Number.parseFloat(formData.pricePerKg)).toLocaleString()}
+                          $
+                          {(
+                            selectedVehicle.capacity *
+                            Number.parseFloat(formData.pricePerKg)
+                          ).toLocaleString()}
                         </span>
                       </div>
                     )}
@@ -264,7 +366,9 @@ export default function CreateTripPage() {
                     id="description"
                     placeholder="Add any special notes about this trip..."
                     value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, description: e.target.value })
+                    }
                     rows={3}
                   />
                 </div>
@@ -273,12 +377,21 @@ export default function CreateTripPage() {
 
             {/* Navigation Buttons */}
             <div className="flex justify-between pt-6">
-              <Button type="button" variant="outline" onClick={handleBack} disabled={currentStep === 1}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleBack}
+                disabled={currentStep === 1}
+              >
                 Back
               </Button>
 
               {currentStep < 3 ? (
-                <Button type="button" onClick={handleNext} disabled={!canProceed()}>
+                <Button
+                  type="button"
+                  onClick={handleNext}
+                  disabled={!canProceed()}
+                >
                   Next
                 </Button>
               ) : (
@@ -291,5 +404,5 @@ export default function CreateTripPage() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

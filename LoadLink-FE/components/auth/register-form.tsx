@@ -11,7 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { useAuth } from "@/contexts/auth-context"
-import { mockRegister } from "@/lib/auth"
+import { registerApi } from "@/lib/auth"
 import type { UserRole } from "@/lib/data"
 import { Truck, Package } from "lucide-react"
 
@@ -21,9 +21,10 @@ export function RegisterForm() {
     email: "",
     phone: "",
     role: "shipper" as UserRole,
+    password: "",
+    confirmPassword: "",
   })
-  const [password, setPassword] = useState("")
-  const [confirmPassword, setConfirmPassword] = useState("")
+
   const [error, setError] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const { login } = useAuth()
@@ -34,14 +35,14 @@ export function RegisterForm() {
     setIsLoading(true)
     setError("")
 
-    if (password !== confirmPassword) {
+    if (formData.password !== formData.confirmPassword) {
       setError("Passwords do not match")
       setIsLoading(false)
       return
     }
 
     try {
-      const user = mockRegister(formData)
+      const user = await registerApi(formData)
       login(user)
       // Redirect based on role
       if (user.role === "shipper") {
@@ -134,8 +135,8 @@ export function RegisterForm() {
               id="password"
               type="password"
               placeholder="Create a password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              value={formData.password}
+              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
               required
             />
           </div>
@@ -146,8 +147,8 @@ export function RegisterForm() {
               id="confirmPassword"
               type="password"
               placeholder="Confirm your password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
+              value={formData.confirmPassword}
+              onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
               required
             />
           </div>

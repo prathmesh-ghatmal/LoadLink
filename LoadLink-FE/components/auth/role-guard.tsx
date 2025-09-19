@@ -19,7 +19,9 @@ export function RoleGuard({
   redirectTo = "/",
   fallback = <div>Loading...</div>,
 }: RoleGuardProps) {
-  const { user, isAuthenticated, role } = useAuth()
+  const { user, isAuthenticated, role, loading } = useAuth()
+  if (loading) return <>{fallback}</>
+ 
   const router = useRouter()
 
   useEffect(() => {

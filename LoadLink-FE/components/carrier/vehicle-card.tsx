@@ -23,20 +23,30 @@ export function VehicleCard({ vehicle, onEdit, onDelete }: VehicleCardProps) {
           <div className="flex items-center space-x-3">
             {getVehicleIcon(vehicle.type)}
             <div>
-              <CardTitle className="text-lg capitalize">{vehicle.type}</CardTitle>
-              <Badge variant={vehicle.isActive ? "default" : "secondary"}>
-                {vehicle.isActive ? "Active" : "Inactive"}
+              <CardTitle className="text-lg capitalize">
+                {vehicle.type}
+              </CardTitle>
+              <Badge variant={vehicle.is_active ? "default" : "secondary"}>
+                {vehicle.is_active ? "Active" : "Inactive"}
               </Badge>
             </div>
           </div>
           <div className="flex space-x-2">
             {onEdit && (
-              <Button size="sm" variant="outline" onClick={() => onEdit(vehicle.id)}>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => onEdit(vehicle.id)}
+              >
                 <Edit className="h-4 w-4" />
               </Button>
             )}
             {onDelete && (
-              <Button size="sm" variant="outline" onClick={() => onDelete(vehicle.id)}>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => onDelete(vehicle.id)}
+              >
                 <Trash2 className="h-4 w-4" />
               </Button>
             )}
@@ -52,14 +62,14 @@ export function VehicleCard({ vehicle, onEdit, onDelete }: VehicleCardProps) {
           </div>
           <div className="flex items-center space-x-2">
             <FileText className="h-4 w-4 text-muted-foreground" />
-            <span>{vehicle.licensePlate}</span>
+            <span>{vehicle.license_plate}</span>
           </div>
         </div>
 
         <div className="text-sm text-muted-foreground">
-          <p>RC Number: {vehicle.rcNumber}</p>
+          <p>RC Number: {vehicle.rc_number}</p>
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }

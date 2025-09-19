@@ -13,7 +13,15 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 
 export default function ShipperDashboard() {
-  const { user } = useAuth()
+  
+  const { user, loading } = useAuth()
+  if (loading) return <div>Loading...</div>
+  const router = useRouter();
+  // if (!user || user.role !== "shipper") {
+  //   router.push("/login")
+  //   return null
+  // }
+
   const userBookings = bookings.filter((b) => b.shipperId === user?.id)
   const recentBookings = userBookings.slice(0, 3)
 
@@ -27,7 +35,7 @@ export default function ShipperDashboard() {
     totalSpent: userPayments.reduce((sum, p) => sum + p.amount, 0),
   }
 
-  const router = useRouter();
+  
 
   const handleQuickSearch = (searchData: {
     origin: string
