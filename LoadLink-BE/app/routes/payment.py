@@ -2,10 +2,11 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from datetime import date
 from uuid import UUID
-
-from app.models import Booking, Payment, Trip
+from app.dependencies import get_current_user
+from app.models import Booking, Payment, Trip,User
 from app.database import get_db
 from app.schemas.payment import PaymentCreate, PaymentOut
+
 router = APIRouter()
 @router.post("/payments/{booking_id}", response_model=PaymentOut)
 def create_payment(booking_id: UUID, db: Session = Depends(get_db)):
@@ -25,8 +26,8 @@ def create_payment(booking_id: UUID, db: Session = Depends(get_db)):
     today = date.today()
     payment = Payment(
         booking_id=booking.id,
-        from_user_id=carrier_id,
-        to_user_id=booking.shipper_id,
+        from_user_id=booking.shipper_id,
+        to_user_id=carrier_id,
         amount=float(booking.total_price),
         status="completed",
         created_date=today,
@@ -42,3 +43,27 @@ def create_payment(booking_id: UUID, db: Session = Depends(get_db)):
     db.refresh(payment)
 
     return payment
+
+
+@router.get("/payments/me", response_model=list[PaymentOut])
+def get_my_payments(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Fetch all payments where the logged-in user is either sender (from_user_id)
+    or receiver (to_user_id).
+    """
+    payments = (
+        db.query(Payment)
+        .filter(
+            (Payment.from_user_id == current_user.id)
+            | (Payment.to_user_id == current_user.id)
+        )
+        .all()
+    )
+
+    if not payments:
+        raise HTTPException(status_code=404, detail="No payments found for this user")
+
+    return payments

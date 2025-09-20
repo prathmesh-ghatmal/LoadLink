@@ -7,14 +7,19 @@ import { FadeIn } from "@/components/ui/fade-in"
 import { SlideIn } from "@/components/ui/slide-in"
 import { StaggerContainer, StaggerItem } from "@/components/ui/stagger-container"
 import { useAuth } from "@/contexts/auth-context"
-import { bookings, payments } from "@/lib/data"
+import { useEffect, useState } from "react";
 import { Package, Search, Clock, CheckCircle, CreditCard } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { BookingOut, getBookingsApi } from "@/services/booking"
+import { getAllPaymentsApi, PaymentOut } from "@/services/payment"
 
 export default function ShipperDashboard() {
   
   const { user, loading } = useAuth()
+  const [bookings, setBookings] = useState<BookingOut[]>([]);
+  const [payments, setPayments] = useState<PaymentOut[]>([]);
+
   if (loading) return <div>Loading...</div>
   const router = useRouter();
   // if (!user || user.role !== "shipper") {
@@ -22,18 +27,38 @@ export default function ShipperDashboard() {
   //   return null
   // }
 
-  const userBookings = bookings.filter((b) => b.shipper_id === user?.id)
-  const recentBookings = userBookings.slice(0, 3)
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const bookingData = await getBookingsApi();
+        const paymentData = await getAllPaymentsApi();
+        console.log("first,",paymentData)
+        // filter only current user’s data
+        setBookings(bookingData.filter((b) => b.shipper_id === user?.id));
+        setPayments(paymentData.filter((p) => p.from_user_id === user?.id));
+      } catch (err) {
+        console.error("Failed to load dashboard data", err);
+      }
+    };
 
-  const userPayments = payments.filter((p) => p.fromUserId === user?.id)
-  const recentPayments = userPayments.slice(0, 3)
+    if (user?.id) {
+      fetchData();
+    }
+  }, [user?.id]);
 
-  const stats = {
-    totalBookings: userBookings.length,
-    pendingBookings: userBookings.filter((b) => b.status === "pending").length,
-    completedBookings: userBookings.filter((b) => b.status === "completed" || b.status === "paid").length,
-    totalSpent: userPayments.reduce((sum, p) => sum + p.amount, 0),
-  }
+
+ const recentBookings = bookings.slice(0, 3);
+ const recentPayments = payments.slice(0, 3);
+console.log(recentBookings.length,recentPayments.length)
+ const stats = {
+   totalBookings: bookings.length,
+   pendingBookings: bookings.filter((b) => b.status === "pending").length,
+   completedBookings: bookings.filter(
+     (b) => b.status === "fulfilled" || b.status === "paid"
+   ).length,
+   totalSpent: payments.reduce((sum, p) => sum + p.amount, 0),
+ };
+
 
   
 
@@ -186,7 +211,7 @@ export default function ShipperDashboard() {
               {recentPayments.length > 0 ? (
                 <StaggerContainer>
                   {recentPayments.map((payment) => {
-                    const booking = bookings.find((b) => b.id === payment.bookingId)
+                    const booking = bookings.find((b) => b.id === payment.booking_id)
                     return (
                       <StaggerItem key={payment.id}>
                         <div className="flex items-center justify-between p-3 bg-muted rounded-lg hover:bg-muted/80 transition-colors duration-200">

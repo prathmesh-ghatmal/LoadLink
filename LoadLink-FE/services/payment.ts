@@ -45,6 +45,6 @@ export const getPaymentByIdApi = async (
 
 // Optionally, get all payments (admin)
 export const getAllPaymentsApi = async (): Promise<PaymentOut[]> => {
-  const res = await api.get("/payments/");
+  const res = await api.get("/payments/me");
   return res.data;
 };
