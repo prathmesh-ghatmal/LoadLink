@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.database import engine, Base
-from app.routes import auth, user, vehicle, trip, booking
+from app.routes import auth, user, vehicle, trip, booking,payment
 
 # Create tables
 Base.metadata.create_all(bind=engine)
@@ -27,3 +27,4 @@ app.include_router(user.user_router)
 app.include_router(vehicle.vehicle_router)
 app.include_router(trip.trip_router)
 app.include_router(booking.router)
+app.include_router(payment.router)

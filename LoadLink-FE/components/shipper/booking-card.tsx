@@ -12,6 +12,7 @@ import { useAuth } from "@/contexts/auth-context"
 import { BookingOut } from "@/services/booking"
 import { getTripByIdApi, TripOut } from "@/services/trips"
 import { getUserByIdApi, UserOut } from "@/services/user"
+import { createPaymentApi } from "@/services/payment"
 
 interface BookingCardProps {
   booking: BookingOut
@@ -61,17 +62,31 @@ export function BookingCard({ booking, onReview, onCancel, onRefresh }: BookingC
   const canReview = booking.status === "paid" && !existingReview
 
   const handlePayNow = async () => {
-    if (confirm(`Confirm payment of $${booking.total_price.toLocaleString()} for this booking?`)) {
-      setIsProcessingPayment(true)
+    if (!trip) return;
+    const total = booking.load_size * trip.price_per_kg;
 
-      // Simulate payment processing
-      setTimeout(() => {
-        dataActions.processPayment(booking.id)
-        setIsProcessingPayment(false)
-        onRefresh?.()
-      }, 2000)
+    if (
+      confirm(`Confirm payment of $${total.toLocaleString()} for this booking?`)
+    ) {
+      setIsProcessingPayment(true);
+
+      try {
+        // Call the backend API to create payment and mark booking as paid
+        await createPaymentApi(booking.id);
+
+        // Optionally show a success message
+        alert("Payment successful! Booking is now marked as paid.");
+
+        // Refresh parent or state
+        onRefresh?.();
+      } catch (err) {
+        console.error("Payment failed:", err);
+        alert("Payment failed. Please try again.");
+      } finally {
+        setIsProcessingPayment(false);
+      }
     }
-  }
+  };
 
   const handleReviewSubmit = () => {
     setShowReviewForm(false)
