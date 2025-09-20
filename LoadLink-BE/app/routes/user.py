@@ -19,3 +19,20 @@ def get_me(current_user: User = Depends(get_current_user)):
 def get_user_by_id(user_id: str, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     # Convert string to UUID
     return current_user
+
+
+# Get all bookings for a specific trip
+@user_router.get("/shipper/{shipper_id}", response_model=UserOut)
+def get_shipper_by_id(
+    shipper_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    # Check if the shipper exists
+    shipper = db.query(User).filter_by(id=shipper_id).first()
+    if not shipper:
+        raise HTTPException(status_code=404, detail="Shipper not found")
+
+    return shipper
+
+    

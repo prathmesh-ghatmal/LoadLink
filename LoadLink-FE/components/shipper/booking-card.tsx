@@ -1,5 +1,5 @@
 "use client"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -9,9 +9,12 @@ import { trips, users, dataActions, reviews } from "@/lib/data"
 import { ReviewForm } from "@/components/ui/review-form"
 import { MapPin, Calendar, Weight, DollarSign, CreditCard } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
+import { BookingOut } from "@/services/booking"
+import { getTripByIdApi, TripOut } from "@/services/trips"
+import { getUserByIdApi, UserOut } from "@/services/user"
 
 interface BookingCardProps {
-  booking: Booking
+  booking: BookingOut
   onReview?: (bookingId: string) => void
   onCancel?: (bookingId: string) => void
   onRefresh?: () => void
@@ -19,11 +22,38 @@ interface BookingCardProps {
 
 export function BookingCard({ booking, onReview, onCancel, onRefresh }: BookingCardProps) {
   const { user } = useAuth()
+  const [trip, setTrip] = useState<TripOut | null>(null);
+  const [carrier, setCarrier] = useState<UserOut | null>(null);
+  const [loading, setLoading] = useState(true);
   const [showReviewForm, setShowReviewForm] = useState(false)
   const [isProcessingPayment, setIsProcessingPayment] = useState(false)
 
-  const trip = trips.find((t) => t.id === booking.tripId)
-  const carrier = trip ? users.find((u) => u.id === trip.carrierId) : null
+  useEffect(() => {
+    let isMounted = true;
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const tripData = await getTripByIdApi(booking.trip_id);
+        if (!isMounted) return;
+        setTrip(tripData);
+
+        const carrierData = await getUserByIdApi(tripData.carrier_id);
+        if (!isMounted) return;
+        setCarrier(carrierData);
+      } catch (err) {
+        console.error("Failed to fetch trip or carrier:", err);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+    fetchData();
+    return () => {
+      isMounted = false;
+    };
+  }, [booking.trip_id]);
+
+  if (loading)
+    return <div className="text-center py-4">Loading booking details...</div>;
 
   if (!trip || !carrier) return null
 
@@ -31,7 +61,7 @@ export function BookingCard({ booking, onReview, onCancel, onRefresh }: BookingC
   const canReview = booking.status === "paid" && !existingReview
 
   const handlePayNow = async () => {
-    if (confirm(`Confirm payment of $${booking.totalPrice.toLocaleString()} for this booking?`)) {
+    if (confirm(`Confirm payment of $${booking.total_price.toLocaleString()} for this booking?`)) {
       setIsProcessingPayment(true)
 
       // Simulate payment processing
@@ -95,32 +125,32 @@ export function BookingCard({ booking, onReview, onCancel, onRefresh }: BookingC
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div className="flex items-center space-x-2">
               <Calendar className="h-4 w-4 text-muted-foreground" />
-              <span>{new Date(trip.departureDate).toLocaleDateString()}</span>
+              <span>{new Date(trip.departure_date).toLocaleDateString()}</span>
             </div>
             <div className="flex items-center space-x-2">
               <Weight className="h-4 w-4 text-muted-foreground" />
-              <span>{booking.loadSize.toLocaleString()} kg</span>
+              <span>{booking.load_size.toLocaleString()} kg</span>
             </div>
           </div>
 
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <DollarSign className="h-4 w-4 text-muted-foreground" />
-              <span className="font-semibold">${booking.totalPrice.toLocaleString()}</span>
+              <span className="font-semibold">{booking.load_size * (trip?.price_per_kg || 0)}</span>
             </div>
             <span className="text-sm text-muted-foreground">Carrier: {carrier.name}</span>
           </div>
 
           {booking.notes && <p className="text-sm text-muted-foreground bg-muted p-2 rounded">{booking.notes}</p>}
 
-          {booking.fulfilledDate && (
+          {booking.fulfilled_date && (
             <div className="bg-green-50 border border-green-200 p-3 rounded">
               <p className="text-sm text-green-800">
-                <strong>Fulfilled on:</strong> {new Date(booking.fulfilledDate).toLocaleDateString()}
+                <strong>Fulfilled on:</strong> {new Date(booking.fulfilled_date).toLocaleDateString()}
               </p>
-              {booking.paidDate && (
+              {booking.paid_date && (
                 <p className="text-sm text-green-800">
-                  <strong>Paid on:</strong> {new Date(booking.paidDate).toLocaleDateString()}
+                  <strong>Paid on:</strong> {new Date(booking.paid_date).toLocaleDateString()}
                 </p>
               )}
             </div>
@@ -140,7 +170,7 @@ export function BookingCard({ booking, onReview, onCancel, onRefresh }: BookingC
               </Button>
             )}
 
-            {booking.status === "completed" && onReview && (
+            {booking.status === "fulfilled" && onReview && (
               <Button size="sm" onClick={() => onReview(booking.id)}>
                 Leave Review
               </Button>

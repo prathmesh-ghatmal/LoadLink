@@ -132,3 +132,26 @@ def delete_booking(
     db.delete(booking)
     db.commit()
     return
+
+# Get all bookings for a specific trip
+@router.get("/trip/{trip_id}", response_model=list[BookingResponse])
+def get_bookings_by_trip(
+    trip_id: str,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    # Check if the trip exists
+    trip = db.query(models.Trip).filter_by(id=trip_id).first()
+    if not trip:
+        raise HTTPException(status_code=404, detail="Trip not found")
+
+    # Authorization: Carrier can only see their own trips
+    if current_user.role == "carrier" and trip.carrier_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized")
+
+    # Shipper can see their own bookings only
+    if current_user.role == "shipper":
+        return db.query(models.Booking).filter_by(trip_id=trip_id, shipper_id=current_user.id).all()
+
+    # Admin can see all bookings for this trip
+    return db.query(models.Booking).filter_by(trip_id=trip_id).all()

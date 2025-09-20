@@ -41,17 +41,17 @@ export interface Trip {
 
 export interface Booking {
   id: string
-  tripId: string
-  shipperId: string
-  loadSize: number // in kg
-  totalPrice: number
+  trip_id: string
+  shipper_id: string
+  load_size: number // in kg
+  total_price: number
   status: "pending" | "accepted" | "rejected" | "completed" | "fulfilled" | "paid"
-  createdDate: string
+  created_date: string
   notes?: string
-  fulfilledDate?: string
-  paidDate?: string
-  qrGenerated?: boolean
-  qrGeneratedDate?: string
+  fulfilled_date?: string
+  paid_date?: string
+  qr_Generated?: boolean
+  qr_GeneratedDate?: string
 }
 
 export interface Payment {
@@ -61,8 +61,8 @@ export interface Payment {
   toUserId: string
   amount: number
   status: "pending" | "completed" | "failed"
-  createdDate: string
-  completedDate?: string
+  created_date: string
+  completed_date?: string
 }
 
 export interface Review {
@@ -204,49 +204,49 @@ export const trips: Trip[] = [
 export const bookings: Booking[] = [
   {
     id: "1",
-    tripId: "1",
-    shipperId: "1",
-    loadSize: 1000,
-    totalPrice: 2500,
+    trip_id: "1",
+    shipper_id: "1",
+    load_size: 1000,
+    total_price: 2500,
     status: "pending",
-    createdDate: "2024-01-18",
+    created_date: "2024-01-18",
     notes: "Fragile items, handle with care",
   },
   {
     id: "2",
-    tripId: "2",
-    shipperId: "3",
-    loadSize: 2000,
-    totalPrice: 3600,
+    trip_id: "2",
+    shipper_id: "3",
+    load_size: 2000,
+    total_price: 3600,
     status: "accepted",
-    createdDate: "2024-01-19",
+    created_date: "2024-01-19",
     notes: "Standard packaging",
   },
   {
     id: "3",
-    tripId: "1",
-    shipperId: "3",
-    loadSize: 500,
-    totalPrice: 1250,
+    trip_id: "1",
+    shipper_id: "3",
+    load_size: 500,
+    total_price: 1250,
     status: "paid",
-    createdDate: "2024-01-17",
-    fulfilledDate: "2024-01-20",
-    paidDate: "2024-01-20",
-    qrGenerated: true,
-    qrGeneratedDate: "2024-01-20",
+    created_date: "2024-01-17",
+    fulfilled_date: "2024-01-20",
+    paid_date: "2024-01-20",
+    qr_Generated: true,
+    qr_GeneratedDate: "2024-01-20",
     notes: "Electronics shipment",
   },
   {
     id: "4",
-    tripId: "3",
-    shipperId: "1",
-    loadSize: 300,
-    totalPrice: 960,
+    trip_id: "3",
+    shipper_id: "1",
+    load_size: 300,
+    total_price: 960,
     status: "fulfilled",
-    createdDate: "2024-01-19",
-    fulfilledDate: "2024-01-21",
-    qrGenerated: true,
-    qrGeneratedDate: "2024-01-21",
+    created_date: "2024-01-19",
+    fulfilled_date: "2024-01-21",
+    qr_Generated: true,
+    qr_GeneratedDate: "2024-01-21",
     notes: "Awaiting payment",
   },
 ]
@@ -282,8 +282,8 @@ export const payments: Payment[] = [
     toUserId: "2",
     amount: 1250,
     status: "completed",
-    createdDate: "2024-01-20",
-    completedDate: "2024-01-20",
+    created_date: "2024-01-20",
+    completed_date: "2024-01-20",
   },
 ]
 
@@ -332,8 +332,8 @@ export const dataActions = {
     if (index !== -1) {
       bookings[index] = {
         ...bookings[index],
-        qrGenerated: true,
-        qrGeneratedDate: new Date().toISOString().split("T")[0],
+        qr_Generated: true,
+        qr_GeneratedDate: new Date().toISOString().split("T")[0],
       }
     }
   },
@@ -344,19 +344,19 @@ export const dataActions = {
       // Update booking status to paid
       dataActions.updateBooking(bookingId, {
         status: "paid",
-        paidDate: new Date().toISOString().split("T")[0],
+        paid_date: new Date().toISOString().split("T")[0],
       })
 
       // Create payment record
       const payment: Payment = {
         id: `payment-${Date.now()}`,
         bookingId,
-        fromUserId: booking.shipperId,
-        toUserId: trips.find((t) => t.id === booking.tripId)?.carrier_id || "",
-        amount: booking.totalPrice,
+        fromUserId: booking.shipper_id,
+        toUserId: trips.find((t) => t.id === booking.trip_id)?.carrier_id || "",
+        amount: booking.total_price,
         status: "completed",
-        createdDate: new Date().toISOString().split("T")[0],
-        completedDate: new Date().toISOString().split("T")[0],
+        created_date: new Date().toISOString().split("T")[0],
+        completed_date: new Date().toISOString().split("T")[0],
       }
       payments.push(payment)
     }

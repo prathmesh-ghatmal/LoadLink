@@ -37,7 +37,7 @@ export default function CarrierDashboard() {
   const userTrips = trips.filter((t) => t.carrier_id === user?.id)
   const userVehicles = vehicles.filter((v) => v.carrier_id === user?.id)
   const userBookings = bookings.filter((b) => {
-    const trip = trips.find((t) => t.id === b.tripId)
+    const trip = trips.find((t) => t.id === b.trip_id)
     return trip?.carrier_id === user?.id
   })
   const recentTrips = userTrips.slice(0, 3)
@@ -174,7 +174,7 @@ export default function CarrierDashboard() {
               <div className="space-y-3">
                 {recentPayments.map((payment) => {
                   const booking = bookings.find((b) => b.id === payment.bookingId)
-                  const trip = booking ? trips.find((t) => t.id === booking.tripId) : null
+                  const trip = booking ? trips.find((t) => t.id === booking.trip_id) : null
                   return (
                     <div
                       key={payment.id}
@@ -185,8 +185,8 @@ export default function CarrierDashboard() {
                           {trip ? `${trip.origin} → ${trip.destination}` : `Payment #${payment.id.slice(-4)}`}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          {booking?.loadSize.toLocaleString()} kg •{" "}
-                          {new Date(payment.completedDate || payment.createdDate).toLocaleDateString()}
+                          {booking?.load_size.toLocaleString()} kg •{" "}
+                          {new Date(payment.completed_date || payment.created_date).toLocaleDateString()}
                         </p>
                       </div>
                       <div className="text-right">

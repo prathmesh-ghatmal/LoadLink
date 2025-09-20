@@ -16,6 +16,7 @@ import { MapPin, Calendar, Truck, Star, Weight, DollarSign, User, Phone, Mail } 
 import { getTripByIdApi, TripOut } from "@/services/trips"
 import { getUserByIdApi, UserOut } from "@/services/user"
 import { getVehicleByIdApi, VehicleOut } from "@/services/vehicles"
+import { BookingCreate, BookingOut, createBookingApi } from "@/services/booking"
 
 export default function TripDetailsPage() {
   const params = useParams()
@@ -73,30 +74,32 @@ export default function TripDetailsPage() {
   const totalPrice = loadSize ? Number.parseFloat(loadSize) * trip.price_per_kg : 0
 
   const handleBooking = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!user || !loadSize) return
+    e.preventDefault();
+    if (!user || !loadSize) return;
 
-    setIsBooking(true)
+    setIsBooking(true);
 
-    // In a real app, this would make an API call
-    const newBooking = {
-      id: Date.now().toString(),
-      tripId: trip.id,
-      shipperId: user.id,
-      loadSize: Number.parseFloat(loadSize),
-      totalPrice,
-      status: "pending" as const,
-      createdDate: new Date().toISOString().split("T")[0],
-      notes,
+    try {
+      const bookingData: BookingCreate = {
+        trip_id: trip!.id,
+        load_size: Number.parseFloat(loadSize),
+        notes,
+      };
+
+      const newBooking: BookingOut = await createBookingApi(bookingData);
+
+      // Optionally, show a toast or confirmation message here
+      console.log("Booking successful:", newBooking);
+
+      // Redirect to bookings page
+      router.push("/shipper/bookings");
+    } catch (err: any) {
+      console.error("Booking failed:", err);
+      alert(err.response?.data?.detail || "Failed to create booking");
+    } finally {
+      setIsBooking(false);
     }
-
-    bookings.push(newBooking)
-
-    setTimeout(() => {
-      setIsBooking(false)
-      router.push("/shipper/bookings")
-    }, 1000)
-  }
+  };
 
   return (
     <div className="space-y-6">

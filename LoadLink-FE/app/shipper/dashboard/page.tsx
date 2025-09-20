@@ -22,7 +22,7 @@ export default function ShipperDashboard() {
   //   return null
   // }
 
-  const userBookings = bookings.filter((b) => b.shipperId === user?.id)
+  const userBookings = bookings.filter((b) => b.shipper_id === user?.id)
   const recentBookings = userBookings.slice(0, 3)
 
   const userPayments = payments.filter((p) => p.fromUserId === user?.id)
@@ -194,7 +194,7 @@ export default function ShipperDashboard() {
                             <p className="text-sm font-medium">Payment #{payment.id.slice(-4)}</p>
                             <p className="text-xs text-muted-foreground">
                               Booking #{booking?.id} •{" "}
-                              {new Date(payment.completedDate || payment.createdDate).toLocaleDateString()}
+                              {new Date(payment.completed_date || payment.created_date).toLocaleDateString()}
                             </p>
                           </div>
                           <div className="text-right">

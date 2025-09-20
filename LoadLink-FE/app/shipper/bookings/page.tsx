@@ -1,21 +1,45 @@
 "use client"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { BookingCard } from "@/components/shipper/booking-card"
 import { useAuth } from "@/contexts/auth-context"
 import { bookings } from "@/lib/data"
+import { BookingOut, getBookingsApi } from "@/services/booking"
 
 export default function ShipperBookingsPage() {
-  const { user } = useAuth()
-  const [refreshTrigger, setRefreshTrigger] = useState(0)
+   const { user } = useAuth();
+   const [bookings, setBookings] = useState<BookingOut[]>([]);
+   const [loading, setLoading] = useState(true);
+   const [error, setError] = useState<string | null>(null);
+   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
-  const userBookings = bookings.filter((b) => b.shipperId === user?.id)
+   const fetchBookings = async () => {
+     if (!user) return;
+     setLoading(true);
+     setError(null);
+     try {
+       const data = await getBookingsApi();
+       setBookings(data);
+     } catch (err: any) {
+       console.error(err);
+       setError("Failed to load bookings");
+     } finally {
+       setLoading(false);
+     }
+   };
+
+   useEffect(() => {
+     fetchBookings();
+   }, [user, refreshTrigger]);
+
+
+  const userBookings = bookings.filter((b) => b.shipper_id === user?.id);
 
   const pendingBookings = userBookings.filter((b) => b.status === "pending")
   const acceptedBookings = userBookings.filter((b) => b.status === "accepted")
   const fulfilledBookings = userBookings.filter((b) => b.status === "fulfilled")
   const paidBookings = userBookings.filter((b) => b.status === "paid")
-  const completedBookings = userBookings.filter((b) => b.status === "completed")
+  const completedBookings = userBookings.filter((b) => b.status === "fulfilled" )
 
   const handleReview = (bookingId: string) => {
     window.location.href = `/shipper/reviews/new?bookingId=${bookingId}`

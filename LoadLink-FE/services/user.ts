@@ -35,3 +35,10 @@ export const getUserByIdApi = async (userId: string): Promise<UserOut> => {
   const res = await api.get(`/users/${userId}`);
   return res.data;
 };
+
+
+// Get shipper by ID
+export const getShipperByIdApi = async (shipperId: string): Promise<UserOut> => {
+  const res = await api.get(`/users/shipper/${shipperId}`);
+  return res.data;
+};

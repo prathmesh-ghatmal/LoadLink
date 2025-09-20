@@ -16,7 +16,7 @@ interface TripManagementCardProps {
 
 export function TripManagementCard({ trip, onViewBookings, onEdit, onCancel }: TripManagementCardProps) {
   const vehicle = vehicles.find((v) => v.id === trip.vehicle_id)
-  const tripBookings = bookings.filter((b) => b.tripId === trip.id)
+  const tripBookings = bookings.filter((b) => b.trip_id === trip.id)
   const pendingBookings = tripBookings.filter((b) => b.status === "pending")
 
   const getStatusColor = (status: string) => {
