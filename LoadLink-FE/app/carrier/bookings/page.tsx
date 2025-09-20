@@ -28,7 +28,7 @@ import {
 } from "lucide-react";
 import { TripOut } from "@/services/trips";
 import { useEffect } from "react";
-import { BookingOut, getBookingsByTripApi } from "@/services/booking";  
+import { BookingOut, getBookingsByTripApi, updateBookingApi } from "@/services/booking";  
 import { getMyTripsApi } from "@/services/trips";
 import { tr } from "date-fns/locale";
 import { getShipperByIdApi, UserOut } from "@/services/user";
@@ -94,9 +94,24 @@ export default function CarrierBookingsPage() {
   );
   const paidBookings = userBookings.filter((b) => b.status === "paid");
 
-  const handleAcceptBooking = (bookingId: string) => {
-    dataActions.updateBooking(bookingId, { status: "accepted" });
-    setRefreshTrigger((prev) => prev + 1);
+  const handleAcceptBooking = async (bookingId: string) => {
+    try {
+      // Call backend to update booking status
+      const updatedBooking = await updateBookingApi(bookingId, {
+        status: "accepted",
+      });
+
+      // Optionally, update local state so UI reflects change immediately
+      setUserBookings((prev) =>
+        prev.map((b) => (b.id === bookingId ? updatedBooking : b))
+      );
+
+      // Trigger re-render (if needed for other UI updates)
+      setRefreshTrigger((prev) => prev + 1);
+    } catch (error) {
+      console.error("Failed to accept booking:", error);
+      alert("Failed to accept booking. Please try again.");
+    }
   };
 
   const handleRejectBooking = (bookingId: string) => {
@@ -104,26 +119,58 @@ export default function CarrierBookingsPage() {
     setRefreshTrigger((prev) => prev + 1);
   };
 
-  const handleMarkFulfilled = (bookingId: string) => {
-    if (
-      confirm(
-        "Mark this booking as fulfilled? This will notify the shipper that delivery is complete."
-      )
-    ) {
-      dataActions.updateBooking(bookingId, {
+  const handleMarkFulfilled = async (bookingId: string) => {
+    const confirmFulfill = confirm(
+      "Mark this booking as fulfilled? This will notify the shipper that delivery is complete."
+    );
+    if (!confirmFulfill) return;
+
+    try {
+      const fulfilledDate = new Date().toISOString().split("T")[0];
+
+      // Call backend API
+      const updatedBooking = await updateBookingApi(bookingId, {
         status: "fulfilled",
-        fulfilled_date: new Date().toISOString().split("T")[0],
+        fulfilled_date: fulfilledDate,
       });
+
+      // Update local state so UI reflects change immediately
+      setUserBookings((prev) =>
+        prev.map((b) => (b.id === bookingId ? updatedBooking : b))
+      );
+
       setRefreshTrigger((prev) => prev + 1);
+    } catch (error) {
+      console.error("Failed to mark booking as fulfilled:", error);
+      alert("Failed to mark booking as fulfilled. Please try again.");
     }
   };
 
-  const handleGenerateQR = (bookingId: string) => {
-    dataActions.generatePaymentQR(bookingId);
-    setShowQR(bookingId);
-    setRefreshTrigger((prev) => prev + 1);
-  };
+  const handleGenerateQR = async (bookingId: string) => {
+    try {
+      const qrGeneratedDate = new Date().toISOString().split("T")[0];
 
+      // Call backend API to update the booking
+      const updatedBooking = await updateBookingApi(bookingId, {
+        qr_generated: true,
+        qr_generated_date: qrGeneratedDate,
+      });
+
+      // Update local state so UI shows QR immediately
+      setUserBookings((prev) =>
+        prev.map((b) => (b.id === bookingId ? updatedBooking : b))
+      );
+
+      // Show QR modal
+      setShowQR(bookingId);
+
+      // Trigger refresh if needed
+      setRefreshTrigger((prev) => prev + 1);
+    } catch (error) {
+      console.error("Failed to generate QR:", error);
+      alert("Failed to generate QR. Please try again.");
+    }
+  };
   const handleShowReviewForm = (bookingId: string) => {
     setShowReviewForm(bookingId);
   };
@@ -223,7 +270,7 @@ export default function CarrierBookingsPage() {
                 <p className="font-medium">{shipper.name}</p>
                 <div className="flex items-center space-x-1">
                   <span className="text-sm text-muted-foreground">
-                    {shipper.rating} ⭐ ({shipper.reviewCount} reviews)
+                    {shipper.rating} ⭐ ({shipper.review_count} reviews)
                   </span>
                 </div>
               </div>
@@ -296,7 +343,7 @@ export default function CarrierBookingsPage() {
 
           {showQRAction && (
             <div className="pt-2 space-y-2">
-              {!booking.qrGenerated ? (
+              {!booking.qr_generated ? (
                 <Button
                   onClick={() => handleGenerateQR(booking.id)}
                   className="w-full"
@@ -309,7 +356,7 @@ export default function CarrierBookingsPage() {
                 <div className="bg-blue-50 border border-blue-200 p-3 rounded">
                   <p className="text-sm text-blue-800">
                     <strong>Payment QR Generated:</strong>{" "}
-                    {new Date(booking.qrGeneratedDate!).toLocaleDateString()}
+                    {new Date(booking.qr_generated_date!).toLocaleDateString()}
                   </p>
                   <Button
                     onClick={() => setShowQR(booking.id)}
@@ -446,7 +493,7 @@ export default function CarrierBookingsPage() {
           </DialogHeader>
           {showQR && (
             <QRCodeDisplay
-              amount={bookings.find((b) => b.id === showQR)?.total_price || 0}
+              amount={showQR ? (userBookings.find((b) => b.id === showQR)?.load_size || 0) * (userTrips.find((t) => t.id === userBookings.find((b) => b.id === showQR)?.trip_id)?.price_per_kg || 0) : 0}
               bookingId={showQR}
               onClose={() => setShowQR(null)}
             />
