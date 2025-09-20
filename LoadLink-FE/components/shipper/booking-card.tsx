@@ -11,7 +11,7 @@ import { MapPin, Calendar, Weight, DollarSign, CreditCard } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
 import { BookingOut } from "@/services/booking"
 import { getTripByIdApi, TripOut } from "@/services/trips"
-import { getUserByIdApi, UserOut } from "@/services/user"
+import { getShipperByIdApi, getUserByIdApi, UserOut } from "@/services/user"
 import { createPaymentApi } from "@/services/payment"
 
 interface BookingCardProps {
@@ -38,7 +38,8 @@ export function BookingCard({ booking, onReview, onCancel, onRefresh }: BookingC
         if (!isMounted) return;
         setTrip(tripData);
 
-        const carrierData = await getUserByIdApi(tripData.carrier_id);
+        const carrierData = await getShipperByIdApi(tripData.carrier_id);
+        console.log(carrierData)
         if (!isMounted) return;
         setCarrier(carrierData);
       } catch (err) {
@@ -211,7 +212,7 @@ export function BookingCard({ booking, onReview, onCancel, onRefresh }: BookingC
             toUserName={carrier.name}
             bookingId={booking.id}
             userRole="shipper"
-            onSubmit={handleReviewSubmit}
+            onSuccess={handleReviewSubmit}
             onCancel={() => setShowReviewForm(false)}
           />
         </DialogContent>

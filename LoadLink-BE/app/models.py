@@ -85,12 +85,12 @@ class Booking(Base):
     paid_date = Column(Date)
     qr_generated = Column(Boolean, default=False)
     qr_generated_date = Column(Date)
+    
 
     trip = relationship("Trip", back_populates="bookings")
     shipper = relationship("User", back_populates="bookings")
     payment = relationship("Payment", back_populates="booking", uselist=False)
     reviews = relationship("Review", back_populates="booking", cascade="all, delete")
-
 
 class Payment(Base):
     __tablename__ = "payments"

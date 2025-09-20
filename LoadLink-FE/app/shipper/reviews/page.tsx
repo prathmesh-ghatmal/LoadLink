@@ -4,10 +4,48 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useAuth } from "@/contexts/auth-context"
 import { reviews, users } from "@/lib/data"
 import { Star } from "lucide-react"
+import { getReviewsApi, ReviewOut } from "@/services/review"
+import { useEffect, useState } from "react"
+import { getShipperByIdApi, UserOut } from "@/services/user"
 
 export default function ShipperReviewsPage() {
   const { user } = useAuth()
-  const userReviews = reviews.filter((r) => r.fromUserId === user?.id)
+  const [reviews, setReviews] = useState<ReviewOut[]>([]);
+  const [usersMap, setUsersMap] = useState<Record<string, UserOut>>({});
+  const [loading, setLoading] = useState(true);
+    useEffect(() => {
+      if (!user) return;
+
+      const fetchReviews = async () => {
+        setLoading(true);
+        try {
+          const allReviews = await getReviewsApi();
+          const userReviews = allReviews.filter(
+            (r) => r.from_user_id === user.id
+          );
+          setReviews(userReviews);
+
+          // Fetch unique carriers
+          const carrierIds = Array.from(
+            new Set(userReviews.map((r) => r.to_user_id))
+          );
+          const usersObj: Record<string, UserOut> = {};
+          await Promise.all(
+            carrierIds.map(async (id) => {
+              const u = await getShipperByIdApi(id);
+              usersObj[id] = u;
+            })
+          );
+          setUsersMap(usersObj);
+        } catch (err) {
+          console.error("Failed to fetch reviews:", err);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      fetchReviews();
+    }, [user]);
 
   const renderStars = (rating: number) => {
     return Array.from({ length: 5 }, (_, i) => (
@@ -22,10 +60,10 @@ export default function ShipperReviewsPage() {
         <p className="text-muted-foreground">Reviews you've left for carriers.</p>
       </div>
 
-      {userReviews.length > 0 ? (
+      {reviews.length > 0 ? (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {userReviews.map((review) => {
-            const carrier = users.find((u) => u.id === review.toUserId)
+          {reviews.map((review) => {
+            const carrier = usersMap[review.to_user_id]
             if (!carrier) return null
 
             return (
@@ -41,7 +79,7 @@ export default function ShipperReviewsPage() {
                       <div className="flex items-center space-x-1">
                         {renderStars(review.rating)}
                         <span className="text-sm text-muted-foreground ml-2">
-                          {new Date(review.createdDate).toLocaleDateString()}
+                          {new Date(review.created_date).toLocaleDateString()}
                         </span>
                       </div>
                     </div>
