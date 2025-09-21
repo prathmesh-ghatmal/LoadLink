@@ -1,5 +1,11 @@
 
+# LoadLink
 
+A **web application for carriers and shippers** where truck drivers (carriers) can create trips and manage vehicles, while shippers can book trips, make payments, and both can review each other.
+
+The platform ensures transparency, secure payments, and real-time booking management.
+
+---
 
 
 
@@ -19,52 +25,59 @@
 
 ---
 
-# LoadLink
 
-A **web application for carriers and shippers** where truck drivers (carriers) can create trips and manage vehicles, while shippers can book trips, make payments, and both can review each other.
 
-The platform ensures transparency, secure payments, and real-time booking management.
+## Overview
 
----
+LoadLink simplifies logistics by connecting shippers with carriers through an intuitive web app. Key workflows include:
 
-## 🚀 Tech Stack
-
-**Frontend**
-
-* Next.js (TypeScript)
-* Shadcn UI
-* Tailwind CSS
-* Axios
-
-**Backend**
-
-* FastAPI (Python)
-* SQLAlchemy ORM
-* PostgreSQL
+- Role-based registration: **Shipper** or **Carrier**
+- Carrier can add vehicles and create trips
+- Shippers can search trips and request bookings
+- Carriers accept/reject bookings
+- Payment via QR code after trip completion
+- Ratings and reviews for both carriers and shippers
 
 ---
 
-## ✨ Features
-
-### Carrier
-
-* Add/manage vehicles
-* Create and manage trips (origin, destination, pricing, availability)
-* Accept or reject bookings
-* Mark trips as fulfilled
-* Generate **payment QR** upon completion
-* Track **earnings**
-* Write & receive reviews
+## Features
 
 ### Shipper
+- Register & login
+- View dashboard
+- Search trips by origin, destination, date, and price
+- Create booking requests
+- Pay via generated QR codes
+- Review carriers after trip completion
 
-* Browse and search trips
-* Book trips with custom load size
-* Pay securely via QR code after fulfillment
-* Track **spending history**
-* Write & receive reviews
+### Carrier
+- Register & login
+- Add and manage vehicles
+- Create trips
+- Accept or reject bookings
+- Mark trip as complete
+- Generate payment QR code
+- Review shippers after trip completion
+
+### Common
+- Role-based access control
+- Ratings & reviews system
+- Notifications for booking status
 
 ---
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|------------|
+| Frontend | Next.js, TypeScript, Tailwind CSS, Shadcn UI, Axios |
+| Backend | Python, FastAPI, SQLAlchemy |
+| Database | PostgreSQL |
+| API Testing | Postman |
+| Deployment | Azure |
+
+---
+
 
 ## ⚙️ Installation & Setup
 
@@ -88,7 +101,7 @@ npm run dev
 
 ---
 
-## 🗂 ER Diagram
+## ER Diagram
 
 ```mermaid
 erDiagram
@@ -187,7 +200,7 @@ erDiagram
 
 ---
 
-## 🔄 Flowchart (Booking Process)
+##  Flowchart 
 
 ```mermaid
 flowchart TD
