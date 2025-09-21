@@ -1,15 +1,21 @@
-Perfect 🚛 thanks for the detailed models and feature description! I’ll generate a **comprehensive README.md** for your **LoadLink** project. It will include:
 
-* 📌 Project overview & scope
-* ⚙️ Tech stack
-* 🗂 Features (for carriers & shippers)
-* 🛠️ Installation & setup
-* 📊 ER diagram (Mermaid)
-* 🔄 Flowchart (Mermaid)
-* 🎭 Use case diagram (Mermaid)
-* 📑 Database dictionary
 
-Here’s a production-ready draft you can drop directly into your repo 👇
+
+
+
+## Table of Contents
+- [Overview](#overview)
+- [Features](#features)
+- [Tech Stack](#tech-stack)
+- [ER Diagram](#er-diagram)
+- [Flowchart](#flowchart)
+- [Setup & Installation](#setup--installation)
+- [API Endpoints](#api-endpoints)
+- [Postman Collection](#postman-collection)
+- [Usage](#usage)
+- [License](#license)
+
+
 
 ---
 
@@ -309,6 +315,71 @@ flowchart LR
 
 ---
 
-✅ This README is **GitHub-ready** — all Mermaid diagrams are compatible.
+## API Endpoints
 
-Would you like me to also **generate PDF/Docx documentation** (with diagrams auto-rendered as images) so you can submit it for evaluation?
+**Auth**
+
+* `POST /auth/register` – Register as shipper or carrier
+* `POST /auth/login` – Login and receive access token
+
+**User**
+
+* `GET /users/me` – Get current user details
+* `GET /users/{id}` – Get user by ID
+
+**Vehicle (Carrier only)**
+
+* `POST /vehicles` – Add a new vehicle
+* `GET /vehicles` – Get all vehicles
+* `PUT /vehicles/{id}` – Update vehicle
+
+**Trip (Carrier only)**
+
+* `POST /trips` – Create a trip
+* `GET /trips/my` – Get all trips for carrier
+* `GET /trips/all` – Get all active trips
+* `PUT /trips/{id}` – Update a trip
+
+**Booking (Shipper)**
+
+* `POST /bookings` – Create a booking
+* `GET /bookings` – Get all bookings for shipper
+* `PUT /bookings/{id}` – Update booking
+* `DELETE /bookings/{id}` – Delete booking
+
+**Payment & Review**
+
+* Payment and review endpoints (under development)
+
+---
+
+## Postman Collection
+
+A Postman collection is provided to quickly test all API endpoints.
+
+### Import Collection
+
+1. Download the collection JSON: [LoadLink.postman\_collection.json]([./postman/LoadLink.postman_collection.json](https://.postman.co/workspace/My-Workspace~5ffc3b87-d7b0-43d2-8a5f-6fcba95fbe03/collection/38528958-401b3b4b-5f83-4902-87c1-9dd1ac81e52d?action=share&creator=38528958))
+2. Open Postman → Click **Import** → Select JSON → **Open**
+3. The collection includes grouped endpoints:
+
+   * Auth
+   * User
+   * Vehicle
+   * Trip
+   * Booking
+   * Payment & Review
+
+### Usage
+
+* Set **environment variable `Baseurl`** to your backend URL (`http://127.0.0.1:8000`)
+* Authenticate using the **Bearer token** from login for protected routes
+
+---
+
+## License
+
+MIT License © 2025 LoadLink
+
+
+
